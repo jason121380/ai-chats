@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { Markdown } from "@/components/ui/markdown"
 import { ModelRunCard } from "@/components/council/model-run-card"
 import { StatusBadge } from "@/components/models/model-picker"
 import { formatTokens, formatUsd } from "@/lib/utils"
@@ -96,7 +97,11 @@ export default function SessionDetailPage() {
                 {m.source}
               </div>
             )}
-            <div className="whitespace-pre-wrap">{m.content}</div>
+            {m.source === "USER" ? (
+              <div className="whitespace-pre-wrap">{m.content}</div>
+            ) : (
+              <Markdown>{m.content}</Markdown>
+            )}
           </div>
         ))}
       </section>

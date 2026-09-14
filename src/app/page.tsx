@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Markdown } from "@/components/ui/markdown"
 import { ModelRunCard } from "@/components/council/model-run-card"
 import { MultiModelPicker, modelKey } from "@/components/models/model-picker"
 import { useModels } from "@/components/models/use-models"
@@ -172,7 +173,11 @@ function SoloChat({
                   : "mr-auto max-w-[85%] rounded-lg border bg-muted/40 px-3 py-2 text-sm"
               }
             >
-              <div className="whitespace-pre-wrap">{turn.content}</div>
+              {turn.role === "user" ? (
+                <div className="whitespace-pre-wrap">{turn.content}</div>
+              ) : (
+                <Markdown>{turn.content}</Markdown>
+              )}
               {turn.meta && (
                 <div className="mt-1 text-[10px] opacity-70">{turn.meta}</div>
               )}

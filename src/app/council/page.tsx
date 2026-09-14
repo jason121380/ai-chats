@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
+import { Markdown } from "@/components/ui/markdown"
 import { Separator } from "@/components/ui/separator"
 import {
   Collapsible,
@@ -286,9 +287,7 @@ export default function CouncilPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                      {run.finalAnswer}
-                    </div>
+                    <Markdown>{run.finalAnswer}</Markdown>
                   </CardContent>
                 </Card>
               ) : (

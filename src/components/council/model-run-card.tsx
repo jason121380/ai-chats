@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Markdown } from "@/components/ui/markdown"
 import { StatusBadge } from "@/components/models/model-picker"
 import { formatLatency, formatTokens, formatUsd } from "@/lib/utils"
 import { PROVIDER_LABELS, ROLE_LABELS, type ModelRunDto } from "@/types/api"
@@ -96,8 +97,8 @@ export function ModelRunCard({
               {open ? "Hide response" : "View response"}
             </Button>
             {open && (
-              <div className="mt-2 max-h-96 overflow-y-auto whitespace-pre-wrap rounded-md border bg-muted/40 p-3 text-sm">
-                {run.response}
+              <div className="mt-2 max-h-96 overflow-y-auto rounded-md border bg-muted/40 p-3">
+                <Markdown>{run.response}</Markdown>
               </div>
             )}
           </div>
