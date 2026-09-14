@@ -13,6 +13,14 @@ import { ChatTranscript } from "@/components/council/chat-transcript"
 import { StatusBadge } from "@/components/models/model-picker"
 import { useModels } from "@/components/models/use-models"
 import { formatTokens, formatUsd } from "@/lib/utils"
+import {
+  formatDateTime,
+  kindLabel,
+  modeLabel,
+  sourceLabel,
+  stageLabel,
+  t,
+} from "@/lib/i18n"
 import type { CouncilRunDto, SessionDetailDto } from "@/types/api"
 
 export default function SessionDetailPage() {
@@ -25,7 +33,7 @@ export default function SessionDetailPage() {
     if (!params?.id) return
     fetch(`/api/sessions/${params.id}`)
       .then(async (res) => {
-        if (!res.ok) throw new Error("Failed to load session")
+        if (!res.ok) throw new Error(t.errors.loadSession)
         setSession((await res.json()) as SessionDetailDto)
       })
       .catch((err) =>
@@ -72,18 +80,18 @@ export default function SessionDetailPage() {
           <h1 className="text-2xl font-bold tracking-tight">{session.title}</h1>
           <p className="text-sm text-muted-foreground">
             <Badge variant="secondary" className="mr-2">
-              {session.mode}
+              {modeLabel(session.mode)}
             </Badge>
-            {new Date(session.createdAt).toLocaleString()}
+            {formatDateTime(session.createdAt)}
           </p>
         </div>
         <div className="text-right text-sm">
           <div className="font-semibold">
             {formatUsd(session.cost.totalCostUsd)} ·{" "}
-            {formatTokens(session.cost.totalTokens)} tokens
+            {formatTokens(session.cost.totalTokens)} Token
           </div>
           <div className="text-xs text-muted-foreground">
-            {session.cost.modelCalls} model calls
+            {t.history.modelCalls(session.cost.modelCalls)}
           </div>
         </div>
       </div>
@@ -112,9 +120,9 @@ export default function SessionDetailPage() {
             <div key={councilRun.id} className="space-y-5">
               <div className="flex flex-wrap items-center gap-2">
                 <StatusBadge status={councilRun.status} />
-                <Badge variant="outline">{councilRun.kind}</Badge>
+                <Badge variant="outline">{kindLabel(councilRun.kind)}</Badge>
                 <span className="ml-auto text-xs text-muted-foreground">
-                  {formatTokens(councilRun.totalTokens)} tokens ·{" "}
+                  {formatTokens(councilRun.totalTokens)} Token ·{" "}
                   {formatUsd(councilRun.totalCostUsd)}
                 </span>
               </div>
@@ -139,9 +147,9 @@ export default function SessionDetailPage() {
         })
       ) : (
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Conversation</h2>
+          <h2 className="text-lg font-semibold">{t.history.conversation}</h2>
           {session.messages.length === 0 && (
-            <p className="text-sm text-muted-foreground">No messages.</p>
+            <p className="text-sm text-muted-foreground">{t.history.noMessages}</p>
           )}
           {session.messages.map((m) => (
             <div
@@ -153,8 +161,8 @@ export default function SessionDetailPage() {
               }
             >
               {m.source !== "USER" && (
-                <div className="mb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-                  {m.source}
+                <div className="mb-1 text-[10px] tracking-wide text-muted-foreground">
+                  {sourceLabel(m.source)}
                 </div>
               )}
               {m.source === "USER" ? (
@@ -169,7 +177,7 @@ export default function SessionDetailPage() {
 
       {grouped.standalone.length > 0 && isMultiModel && (
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Other model calls</h2>
+          <h2 className="text-lg font-semibold">{t.history.otherCalls}</h2>
           {grouped.standalone.map((r) => (
             <ModelRunCard key={r.id} run={r} />
           ))}
@@ -197,8 +205,10 @@ function CostBreakdown({
   )
   return (
     <div className="text-sm">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {kind === "DISCUSSION" ? "Discussion" : "Council"} cost breakdown
+      <p className="mb-2 text-xs font-semibold text-muted-foreground">
+        {kind === "DISCUSSION"
+          ? t.history.costBreakdownDiscussion
+          : t.history.costBreakdown}
       </p>
       <div className="space-y-1">
         {sorted.map((r) => (
@@ -207,8 +217,8 @@ function CostBreakdown({
               {r.modelId}{" "}
               <span className="text-xs text-muted-foreground">
                 {r.stage === "DISCUSSION" && r.roundNumber
-                  ? `round ${r.roundNumber}`
-                  : r.stage.replace("_", " ").toLowerCase()}
+                  ? t.transcript.round(r.roundNumber)
+                  : stageLabel(r.stage)}
               </span>
               {r.status !== "COMPLETED" && (
                 <span className="ml-1 text-xs text-destructive">
@@ -224,7 +234,7 @@ function CostBreakdown({
       </div>
       <Separator className="my-2" />
       <div className="flex items-center justify-between font-semibold">
-        <span>Total</span>
+        <span>{t.history.total}</span>
         <span className="tabular-nums">{formatUsd(total)}</span>
       </div>
     </div>

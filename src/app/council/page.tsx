@@ -21,6 +21,7 @@ import {
 } from "@/components/models/model-picker"
 import { useModels } from "@/components/models/use-models"
 import { cn, formatLatency, formatTokens, formatUsd } from "@/lib/utils"
+import { stageLabel, t } from "@/lib/i18n"
 import type { CouncilRunDto } from "@/types/api"
 
 const TERMINAL = ["COMPLETED", "PARTIAL", "FAILED"]
@@ -114,24 +115,24 @@ export default function CouncilPage() {
   const start = async () => {
     setError(null)
     if (!question.trim()) {
-      setError("Enter a question first.")
+      setError(t.errors.enterQuestion)
       return
     }
     const minModels = mode === "DISCUSSION" ? 2 : 1
     if (selected.size < minModels) {
       setError(
         mode === "DISCUSSION"
-          ? "A discussion needs at least two participants."
-          : "Select at least one model."
+          ? t.errors.selectTwo
+          : t.errors.selectModel
       )
       return
     }
     if (mode === "COUNCIL" && !chairman) {
-      setError("Select a chairman.")
+      setError(t.errors.selectChairman)
       return
     }
     if (mode === "DISCUSSION" && withSummary && !chairman) {
-      setError("Select who writes the closing summary, or turn it off.")
+      setError(t.errors.selectSummarizer)
       return
     }
 
@@ -167,7 +168,7 @@ export default function CouncilPage() {
       })
       const data = (await res.json()) as { runId?: string; error?: string }
       if (!res.ok || !data.runId) {
-        throw new Error(data.error ?? "Failed to start")
+        throw new Error(data.error ?? t.errors.startFailed)
       }
       setRunId(data.runId)
     } catch (err) {
@@ -183,12 +184,14 @@ export default function CouncilPage() {
     <div className="mx-auto max-w-3xl space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">
-          {mode === "DISCUSSION" ? "Group Discussion" : "Ask the Council"}
+          {mode === "DISCUSSION"
+            ? t.council.discussionTitle
+            : t.council.title}
         </h1>
         <p className="text-sm text-muted-foreground">
           {mode === "DISCUSSION"
-            ? "Models take turns in one room, see each other, and argue it out."
-            : "Each model analyzes alone, critiques the others anonymously, then a chairman decides."}
+            ? t.council.discussionSubtitle
+            : t.council.subtitle}
         </p>
       </div>
 
@@ -199,8 +202,8 @@ export default function CouncilPage() {
           <Textarea
             placeholder={
               mode === "DISCUSSION"
-                ? "e.g. Should we open salons in Vietnam next year? Let them argue."
-                : "e.g. Should we invest in opening salons in Vietnam next year?"
+                ? t.council.questionPlaceholderDiscussion
+                : t.council.questionPlaceholder
             }
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -210,7 +213,9 @@ export default function CouncilPage() {
 
           <div>
             <p className="mb-2 text-sm font-medium">
-              {mode === "DISCUSSION" ? "Participants" : "Council members"}
+              {mode === "DISCUSSION"
+                ? t.council.participants
+                : t.council.members}
             </p>
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -233,7 +238,7 @@ export default function CouncilPage() {
           {mode === "DISCUSSION" && (
             <div className="flex flex-wrap items-center gap-6">
               <div>
-                <p className="mb-2 text-sm font-medium">Speaking rounds</p>
+                <p className="mb-2 text-sm font-medium">{t.council.rounds}</p>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <Button
@@ -249,8 +254,7 @@ export default function CouncilPage() {
                   ))}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {selected.size} participants × {rounds} rounds ={" "}
-                  {selected.size * rounds} messages
+                  {t.council.roundsEstimate(selected.size, rounds)}
                 </p>
               </div>
               <div className="flex items-center gap-2 pt-6">
@@ -261,7 +265,7 @@ export default function CouncilPage() {
                   disabled={active}
                 />
                 <Label htmlFor="with-summary" className="cursor-pointer">
-                  Closing summary
+                  {t.council.withSummary}
                 </Label>
               </div>
             </div>
@@ -270,7 +274,9 @@ export default function CouncilPage() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="mb-2 text-sm font-medium">
-                {mode === "DISCUSSION" ? "Summary written by" : "Chairman"}
+                {mode === "DISCUSSION"
+                  ? t.council.summarizer
+                  : t.council.chairman}
               </p>
               <ChairmanPicker
                 models={models}
@@ -288,11 +294,11 @@ export default function CouncilPage() {
               )}
               {active
                 ? mode === "DISCUSSION"
-                  ? "Meeting in progress…"
-                  : "Council in session…"
+                  ? t.council.runningDiscussion
+                  : t.council.running
                 : mode === "DISCUSSION"
-                  ? "Start Discussion"
-                  : "Start Council"}
+                  ? t.council.startDiscussion
+                  : t.council.start}
             </Button>
           </div>
 
@@ -307,10 +313,13 @@ export default function CouncilPage() {
             {!TERMINAL.includes(run.status) && (
               <span className="text-sm text-muted-foreground">
                 {run.kind === "DISCUSSION" && run.currentRound
-                  ? `Round ${run.currentRound} of ${run.totalRounds}`
+                  ? t.council.roundProgress(
+                      run.currentRound,
+                      run.totalRounds ?? run.currentRound
+                    )
                   : run.currentStage
-                    ? `Stage: ${run.currentStage}`
-                    : "Starting…"}
+                    ? t.council.stage(stageLabel(run.currentStage))
+                    : t.council.starting}
               </span>
             )}
             {run.errorMessage && (
@@ -331,11 +340,11 @@ export default function CouncilPage() {
             <>
               <Separator className="my-2" />
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <Stat label="Messages" value={String(run.modelRuns.length)} />
-                <Stat label="Tokens" value={formatTokens(run.totalTokens)} />
-                <Stat label="Cost" value={formatUsd(run.totalCostUsd)} />
+                <Stat label={t.stats.messages} value={String(run.modelRuns.length)} />
+                <Stat label={t.stats.tokens} value={formatTokens(run.totalTokens)} />
+                <Stat label={t.stats.cost} value={formatUsd(run.totalCostUsd)} />
                 <Stat
-                  label="Wall time"
+                  label={t.stats.wallTime}
                   value={
                     run.startedAt && run.completedAt
                       ? formatLatency(
@@ -371,13 +380,13 @@ function ModeSwitch({
   }> = [
     {
       value: "COUNCIL",
-      label: "Council",
-      hint: "Independent first, then anonymous critique. No anchoring.",
+      label: t.mode.council,
+      hint: t.mode.councilHint,
     },
     {
       value: "DISCUSSION",
-      label: "Discussion",
-      hint: "Everyone in one room, taking turns, reacting to each other.",
+      label: t.mode.discussion,
+      hint: t.mode.discussionHint,
     },
   ]
 

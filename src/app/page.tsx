@@ -19,6 +19,7 @@ import { ModelRunCard } from "@/components/council/model-run-card"
 import { MultiModelPicker, modelKey } from "@/components/models/model-picker"
 import { useModels } from "@/components/models/use-models"
 import { formatLatency, formatTokens, formatUsd } from "@/lib/utils"
+import { t } from "@/lib/i18n"
 import { PROVIDER_LABELS, type ModelRunDto } from "@/types/api"
 
 interface ChatTurn {
@@ -38,15 +39,15 @@ export default function NewChatPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">New Chat</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t.chat.title}</h1>
         <p className="text-sm text-muted-foreground">
-          Talk to one model, or compare several side by side.
+          {t.chat.subtitle}
         </p>
       </div>
       <Tabs defaultValue="solo">
         <TabsList>
-          <TabsTrigger value="solo">Solo Chat</TabsTrigger>
-          <TabsTrigger value="compare">Compare</TabsTrigger>
+          <TabsTrigger value="solo">{t.chat.solo}</TabsTrigger>
+          <TabsTrigger value="compare">{t.chat.compare}</TabsTrigger>
         </TabsList>
         <TabsContent value="solo">
           {loading ? (
@@ -87,7 +88,7 @@ function SoloChat({
     setError(null)
     setBusy(true)
     const message = input
-    setTurns((t) => [...t, { role: "user", content: message }])
+    setTurns((prev) => [...prev, { role: "user", content: message }])
     setInput("")
     try {
       const res = await fetch("/api/chat", {
@@ -100,16 +101,16 @@ function SoloChat({
         }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? "Request failed")
+      if (!res.ok) throw new Error(data.error ?? t.errors.requestFailed)
       setSessionId(data.sessionId)
       if (data.message) {
         const mr = data.modelRun as ModelRunDto
-        setTurns((t) => [
-          ...t,
+        setTurns((prev) => [
+          ...prev,
           {
             role: "assistant",
             content: data.message.content,
-            meta: `${mr.modelId} · ${formatTokens(mr.totalTokens)} tokens · ${formatUsd(
+            meta: `${mr.modelId} · ${formatTokens(mr.totalTokens)} Token · ${formatUsd(
               mr.totalCostUsd
             )} · ${formatLatency(mr.latencyMs)}`,
           },
@@ -117,7 +118,7 @@ function SoloChat({
       } else {
         const mr = data.modelRun as ModelRunDto
         setError(
-          `${mr.status}: ${mr.errorMessage ?? "The model call failed."}`
+          `${mr.status}: ${mr.errorMessage ?? t.errors.requestFailed}`
         )
       }
     } catch (err) {
@@ -132,7 +133,7 @@ function SoloChat({
       <div className="flex items-center gap-3">
         <Select value={model ?? undefined} onValueChange={setModel}>
           <SelectTrigger className="w-72">
-            <SelectValue placeholder="Select a model" />
+            <SelectValue placeholder={t.chat.selectModel} />
           </SelectTrigger>
           <SelectContent>
             {usable.map((m) => (
@@ -151,7 +152,7 @@ function SoloChat({
               setTurns([])
             }}
           >
-            New conversation
+            {t.chat.newConversation}
           </Button>
         )}
       </div>
@@ -160,8 +161,7 @@ function SoloChat({
         <CardContent className="space-y-3 p-4">
           {turns.length === 0 && (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              Ask anything — the conversation and its full usage ledger are
-              stored in PostgreSQL.
+              {t.chat.emptyState}
             </p>
           )}
           {turns.map((turn, i) => (
@@ -185,7 +185,7 @@ function SoloChat({
           ))}
           {busy && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" /> Thinking…
+              <Loader2 className="h-3 w-3 animate-spin" /> {t.chat.thinking}
             </div>
           )}
           {error && <p className="text-sm text-destructive">{error}</p>}
@@ -195,7 +195,7 @@ function SoloChat({
       <div className="flex gap-2">
         <Textarea
           rows={2}
-          placeholder="Type your message…"
+          placeholder={t.chat.inputPlaceholder}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
@@ -226,7 +226,7 @@ function Compare({
 
   const start = async () => {
     if (!question.trim() || selected.size === 0) {
-      setError("Enter a question and select at least one model.")
+      setError(t.errors.enterQuestion)
       return
     }
     setError(null)
@@ -242,7 +242,7 @@ function Compare({
         }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? "Request failed")
+      if (!res.ok) throw new Error(data.error ?? t.errors.requestFailed)
       setResults(data.results as ModelRunDto[])
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -255,7 +255,7 @@ function Compare({
     <div className="space-y-4">
       <Textarea
         rows={3}
-        placeholder="Ask the same question to several models…"
+        placeholder={t.chat.comparePlaceholder}
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
       />
@@ -273,7 +273,7 @@ function Compare({
       />
       <Button onClick={start} disabled={busy}>
         {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Compare
+        {t.chat.compare_}
       </Button>
       {error && <p className="text-sm text-destructive">{error}</p>}
       {results && (

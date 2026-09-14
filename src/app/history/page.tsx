@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { formatTokens, formatUsd } from "@/lib/utils"
+import { formatDateTime, modeLabel, t } from "@/lib/i18n"
 import type { SessionDto } from "@/types/api"
 
 export default function HistoryPage() {
@@ -23,7 +24,7 @@ export default function HistoryPage() {
   useEffect(() => {
     fetch("/api/sessions")
       .then(async (res) => {
-        if (!res.ok) throw new Error("Failed to load sessions")
+        if (!res.ok) throw new Error(t.errors.loadSessions)
         setSessions((await res.json()) as SessionDto[])
       })
       .catch((err) =>
@@ -34,28 +35,27 @@ export default function HistoryPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">History</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t.history.title}</h1>
         <p className="text-sm text-muted-foreground">
-          Every conversation with its token and cost totals, straight from the
-          ModelRun ledger.
+          {t.history.subtitle}
         </p>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
       {!sessions && !error && <Loader2 className="h-5 w-5 animate-spin" />}
       {sessions && sessions.length === 0 && (
-        <p className="text-sm text-muted-foreground">No sessions yet.</p>
+        <p className="text-sm text-muted-foreground">{t.history.empty}</p>
       )}
       {sessions && sessions.length > 0 && (
         <div className="rounded-lg border bg-background">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Mode</TableHead>
-                <TableHead className="text-right">Model calls</TableHead>
-                <TableHead className="text-right">Tokens</TableHead>
-                <TableHead className="text-right">Cost</TableHead>
-                <TableHead className="text-right">Updated</TableHead>
+                <TableHead>{t.history.colTitle}</TableHead>
+                <TableHead>{t.history.colMode}</TableHead>
+                <TableHead className="text-right">{t.history.colCalls}</TableHead>
+                <TableHead className="text-right">{t.history.colTokens}</TableHead>
+                <TableHead className="text-right">{t.history.colCost}</TableHead>
+                <TableHead className="text-right">{t.history.colUpdated}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -70,7 +70,7 @@ export default function HistoryPage() {
                     </Link>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{s.mode}</Badge>
+                    <Badge variant="secondary">{modeLabel(s.mode)}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     {s.modelCalls ?? 0}
@@ -82,7 +82,7 @@ export default function HistoryPage() {
                     {formatUsd(s.totalCostUsd)}
                   </TableCell>
                   <TableCell className="text-right text-xs text-muted-foreground">
-                    {new Date(s.updatedAt).toLocaleString()}
+                    {formatDateTime(s.updatedAt)}
                   </TableCell>
                 </TableRow>
               ))}

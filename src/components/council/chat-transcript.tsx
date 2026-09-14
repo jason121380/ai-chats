@@ -5,6 +5,7 @@ import { Gavel } from "lucide-react"
 
 import { Markdown } from "@/components/ui/markdown"
 import { formatLatency, formatTokens, formatUsd } from "@/lib/utils"
+import { t } from "@/lib/i18n"
 import type { CouncilRunDto, ModelConfigDto, ModelRunDto } from "@/types/api"
 import {
   ChatDivider,
@@ -85,7 +86,9 @@ export function ChatTranscript({
       {run.finalAnswer && (
         <>
           <ChatDivider
-            label={isDiscussion ? "Closing summary" : "Chairman"}
+            label={
+              isDiscussion ? t.transcript.closingSummary : t.transcript.chairman
+            }
             sublabel={
               chairmanRun
                 ? `${nameFor(chairmanRun.provider, chairmanRun.modelId)}`
@@ -96,11 +99,13 @@ export function ChatTranscript({
             <div className="flex items-center gap-2 border-b bg-primary/5 px-4 py-2">
               <Gavel className="h-4 w-4" />
               <span className="text-sm font-semibold">
-                {isDiscussion ? "Closing summary" : "Final recommendation"}
+                {isDiscussion
+                  ? t.transcript.closingSummary
+                  : t.transcript.finalRecommendation}
               </span>
               {chairmanRun && (
                 <span className="ml-auto text-xs text-muted-foreground">
-                  {formatTokens(chairmanRun.totalTokens)} tokens ·{" "}
+                  {formatTokens(chairmanRun.totalTokens)} Token ·{" "}
                   {formatUsd(chairmanRun.totalCostUsd)} ·{" "}
                   {formatLatency(chairmanRun.latencyMs)}
                 </span>
@@ -118,7 +123,13 @@ export function ChatTranscript({
         (chairmanRun.status === "FAILED" ||
           chairmanRun.status === "TIMEOUT") && (
           <>
-            <ChatDivider label={isDiscussion ? "Closing summary" : "Chairman"} />
+            <ChatDivider
+              label={
+                isDiscussion
+                  ? t.transcript.closingSummary
+                  : t.transcript.chairman
+              }
+            />
             <ChatMessage
               run={chairmanRun}
               displayName={nameFor(
@@ -153,8 +164,8 @@ function CouncilBody({
   return (
     <>
       <ChatDivider
-        label="Round 1"
-        sublabel="independent — nobody sees the others"
+        label={t.transcript.round1}
+        sublabel={t.transcript.round1Hint}
       />
       {roundOne.map((r) => (
         <ChatMessage
@@ -174,8 +185,8 @@ function CouncilBody({
       {critiqueStarted && (
         <>
           <ChatDivider
-            label="Round 2 · Critique"
-            sublabel="anonymous — identities hidden from each other"
+            label={t.transcript.critique}
+            sublabel={t.transcript.critiqueHint}
           />
           {critique.map((r) => (
             <ChatMessage
@@ -225,7 +236,7 @@ function DiscussionBody({
 
   // Round numbers come from the data as well as from totalRounds, so a turn is
   // never silently dropped from the transcript because its round is unexpected.
-  const roundOf = (t: ModelRunDto) => t.roundNumber ?? 1
+  const roundOf = (turn: ModelRunDto) => turn.roundNumber ?? 1
   const rounds = Array.from(
     new Set<number>([
       ...Array.from({ length: totalRounds }, (_, i) => i + 1),
@@ -236,14 +247,14 @@ function DiscussionBody({
   return (
     <>
       {rounds.map((roundNumber) => {
-        const roundTurns = turns.filter((t) => roundOf(t) === roundNumber)
+        const roundTurns = turns.filter((turn) => roundOf(turn) === roundNumber)
         // Don't render a heading for rounds that haven't started.
         if (roundTurns.length === 0 && (!active || roundNumber > currentRound)) {
           return null
         }
 
         const spoken = new Set(
-          roundTurns.map((t) => `${t.provider}/${t.modelId}`)
+          roundTurns.map((turn) => `${turn.provider}/${turn.modelId}`)
         )
         const waiting =
           active && roundNumber === currentRound
@@ -255,20 +266,20 @@ function DiscussionBody({
         return (
           <div key={roundNumber} className="space-y-5">
             <ChatDivider
-              label={`Round ${roundNumber}`}
+              label={t.transcript.round(roundNumber)}
               sublabel={
                 roundNumber === 1 && totalRounds > 1
-                  ? "opening positions"
+                  ? t.transcript.roundOpening
                   : roundNumber === totalRounds
-                    ? "final positions"
-                    : "responding to each other"
+                    ? t.transcript.roundFinal
+                    : t.transcript.roundMiddle
               }
             />
-            {roundTurns.map((t) => (
+            {roundTurns.map((turn) => (
               <ChatMessage
-                key={t.id}
-                run={t}
-                displayName={nameFor(t.provider, t.modelId)}
+                key={turn.id}
+                run={turn}
+                displayName={nameFor(turn.provider, turn.modelId)}
               />
             ))}
             {/* Discussion turns are sequential, so only the next speaker is typing. */}

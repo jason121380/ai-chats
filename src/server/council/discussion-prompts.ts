@@ -10,6 +10,9 @@ import type { DiscussionTurn } from "./types"
  * actually react to each other, like people in a meeting.
  */
 
+const REPLY_LANGUAGE =
+  "Speak in Traditional Chinese (繁體中文, Taiwan usage), regardless of the language these instructions are written in."
+
 export function buildDiscussionSystemPrompt(
   speakerName: string,
   role: CouncilRole,
@@ -37,6 +40,9 @@ export function buildDiscussionSystemPrompt(
     "- Disagree openly when you disagree. A meeting where everyone agrees is a waste of everyone's time.",
     "- Do not summarize the discussion so far — everyone was there.",
     "- Do not write your own name as a prefix; the interface already shows who is speaking.",
+    "",
+    REPLY_LANGUAGE,
+    "Refer to the other participants by the names given above, exactly as written.",
   ]
 
   if (roundNumber === 1) {
@@ -80,17 +86,19 @@ export function buildDiscussionSummarySystemPrompt(): string {
     "",
     "Your job is to make the best decision, not to average what everyone said. Take a position where the discussion supports one.",
     "",
-    "Structure your summary with exactly these sections:",
-    "## Executive Summary",
-    "## Where They Agreed",
-    "## Where They Disagreed",
-    "## Key Risks",
-    "## Recommended Decision",
-    "## Action Plan",
-    "## Confidence",
+    "Structure your summary with exactly these section headings, written exactly as shown (they are already in Traditional Chinese):",
+    "## 執行摘要",
+    "## 共識之處",
+    "## 分歧之處",
+    "## 關鍵風險",
+    "## 建議決策",
+    "## 行動計畫",
+    "## 信心水準",
     "",
     "Attribute specific arguments to the participant who made them — unlike the discussion itself, this summary is not anonymous.",
-    "In Confidence, give a level (High / Medium / Low) and what would change your mind.",
+    "Under 信心水準, give a level (高 / 中 / 低) and what would change your mind.",
+    "",
+    REPLY_LANGUAGE,
   ].join("\n")
 }
 

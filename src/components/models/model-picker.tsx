@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { statusLabel, t } from "@/lib/i18n"
 import { PROVIDER_LABELS, ROLE_LABELS, type ModelConfigDto } from "@/types/api"
 
 export function modelKey(m: { provider: string; modelId: string }): string {
@@ -28,7 +29,7 @@ export function MultiModelPicker({
   if (usable.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No enabled models. Configure models in Settings and run the seed.
+        {t.errors.noEnabledModels}
       </p>
     )
   }
@@ -55,7 +56,7 @@ export function MultiModelPicker({
               <span className="truncate text-xs text-muted-foreground">
                 {PROVIDER_LABELS[m.provider] ?? m.provider} ·{" "}
                 {ROLE_LABELS[m.defaultRole] ?? m.defaultRole}
-                {!m.providerConfigured && " · no API key"}
+                {!m.providerConfigured && ` · ${t.errors.noApiKey}`}
               </span>
             </span>
             <span
@@ -88,7 +89,7 @@ export function ChairmanPicker({
   return (
     <Select value={value ?? undefined} onValueChange={onChange}>
       <SelectTrigger className="w-full sm:w-72">
-        <SelectValue placeholder="Select chairman model" />
+        <SelectValue placeholder={t.council.selectChairmanPlaceholder} />
       </SelectTrigger>
       <SelectContent>
         {usable.map((m) => (
@@ -110,5 +111,5 @@ export function StatusBadge({ status }: { status: string }) {
         : status === "FAILED" || status === "TIMEOUT"
           ? "destructive"
           : "secondary"
-  return <Badge variant={variant}>{status}</Badge>
+  return <Badge variant={variant}>{statusLabel(status)}</Badge>
 }

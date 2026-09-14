@@ -160,12 +160,12 @@ export const PROVIDER_LABELS: Record<string, string> = {
 }
 
 export const ROLE_LABELS: Record<string, string> = {
-  STRATEGIST: "Strategist",
-  RISK_ANALYST: "Risk Analyst",
-  RESEARCHER: "Researcher",
-  DEVILS_ADVOCATE: "Devil's Advocate",
-  CREATIVE: "Creative",
-  EXECUTION: "Execution",
-  CHAIRMAN: "Chairman",
-  GENERAL: "General",
+  STRATEGIST: "策略顧問",
+  RISK_ANALYST: "風險分析",
+  RESEARCHER: "研究調查",
+  DEVILS_ADVOCATE: "反方辯士",
+  CREATIVE: "創意發想",
+  EXECUTION: "執行落地",
+  CHAIRMAN: "主席",
+  GENERAL: "一般",
 }

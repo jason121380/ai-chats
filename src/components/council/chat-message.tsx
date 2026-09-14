@@ -4,6 +4,7 @@ import { AlertTriangle } from "lucide-react"
 
 import { Markdown } from "@/components/ui/markdown"
 import { cn, formatLatency, formatTokens, formatUsd } from "@/lib/utils"
+import { formatTime, t } from "@/lib/i18n"
 import { ROLE_LABELS, type ModelRunDto } from "@/types/api"
 import { speakerInitials, speakerStyle } from "./speaker"
 
@@ -53,16 +54,12 @@ export function ChatMessage({
           <span className={cn("text-sm font-semibold", style.name)}>
             {displayName}
           </span>
-          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
             {ROLE_LABELS[run.role] ?? run.role}
           </span>
           {time && (
             <span className="text-[11px] text-muted-foreground">
-              {new Date(time).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-              })}
+              {formatTime(time)}
             </span>
           )}
         </div>
@@ -73,15 +70,15 @@ export function ChatMessage({
             <div>
               <div className="font-medium">
                 {run.status === "TIMEOUT"
-                  ? "Timed out — no response"
-                  : "Could not respond"}
+                  ? t.transcript.timeoutTitle
+                  : t.transcript.failedTitle}
               </div>
               <div className="text-xs opacity-80">
                 {run.errorCode ? `${run.errorCode}: ` : ""}
-                {run.errorMessage ?? "Unknown error"}
+                {run.errorMessage ?? t.errors.unknown}
               </div>
               <div className="mt-1 text-xs opacity-70">
-                The meeting continued without this reply.
+                {t.transcript.failedHint}
               </div>
             </div>
           </div>
@@ -99,7 +96,7 @@ export function ChatMessage({
                   <Markdown>{run.response}</Markdown>
                 ) : (
                   <p className="text-sm italic text-muted-foreground">
-                    (no content returned)
+                    {t.transcript.noContent}
                   </p>
                 )}
               </div>
@@ -111,15 +108,16 @@ export function ChatMessage({
           <div className="mt-1 flex flex-wrap gap-x-3 text-[11px] text-muted-foreground">
             <span>{formatLatency(run.latencyMs)}</span>
             <span>
-              {formatTokens(run.inputTokens)} in / {formatTokens(run.outputTokens)} out
+              {formatTokens(run.inputTokens)} / {formatTokens(run.outputTokens)}{" "}
+              {t.stats.inOutTokens}
             </span>
             <span>
               {run.pricingStatus === "MISSING" && run.totalCostUsd === null
-                ? "no price configured"
+                ? t.stats.noPrice
                 : formatUsd(run.totalCostUsd)}
             </span>
             {run.attemptCount !== undefined && run.attemptCount > 1 && (
-              <span>{run.attemptCount} attempts</span>
+              <span>{t.stats.attempts(run.attemptCount)}</span>
             )}
           </div>
         )}
@@ -174,7 +172,7 @@ export function ChatDivider({
     <div className="flex items-center gap-3 py-1">
       <div className="h-px flex-1 bg-border" />
       <div className="text-center">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <span className="text-xs font-semibold text-muted-foreground">
           {label}
         </span>
         {sublabel && (
@@ -193,10 +191,10 @@ export function ChatQuestion({ content }: { content: string }) {
   return (
     <div className="flex gap-3">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-        You
+        {t.transcript.you}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-semibold">You</div>
+        <div className="text-sm font-semibold">{t.transcript.you}</div>
         <div className="mt-1 whitespace-pre-wrap rounded-lg border bg-muted/40 px-3 py-2.5 text-sm">
           {content}
         </div>

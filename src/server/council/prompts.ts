@@ -21,12 +21,23 @@ export const ROLE_DESCRIPTIONS: Record<CouncilRole, string> = {
     "You are a member of an advisory council. Provide your best independent analysis.",
 }
 
+/**
+ * Instructions stay in English — most models follow English system prompts
+ * more reliably — but the OUTPUT language is pinned to Traditional Chinese
+ * so the transcript is readable to the people who use this, whatever
+ * language the question happened to be typed in.
+ */
+const REPLY_LANGUAGE =
+  "Write your answer in Traditional Chinese (繁體中文, Taiwan usage), regardless of the language these instructions are written in."
+
 export function buildRoundOneSystemPrompt(role: CouncilRole): string {
   return [
     ROLE_DESCRIPTIONS[role],
     "",
     "You are one member of an AI advisory council. Several advisors are analyzing the same question independently and in parallel. You cannot see the other advisors' answers, and they cannot see yours.",
     "Give your own complete, self-contained analysis: key considerations, your recommendation, and the reasoning behind it. Be concrete and decision-oriented.",
+    "",
+    REPLY_LANGUAGE,
   ].join("\n")
 }
 
@@ -38,6 +49,8 @@ export function buildCritiqueSystemPrompt(): string {
   return [
     "You are a member of an AI advisory council in the critique round.",
     "You will receive the original question and several anonymous responses (labeled Response A, Response B, ...). One of them may be your own — you do not know which. Judge purely on merit.",
+    "",
+    REPLY_LANGUAGE,
   ].join("\n")
 }
 
@@ -72,16 +85,18 @@ export function buildChairmanSystemPrompt(): string {
     "Several advisors answered the question independently, then critiqued each other's answers anonymously. You have all of that material.",
     "Your job is to make the best possible decision for the decision-maker. The goal is to make the best decision, not to average all answers. Take sides where the evidence warrants it, and say clearly what should be done.",
     "",
-    "Structure your answer with exactly these sections:",
-    "## Executive Summary",
-    "## Consensus",
-    "## Key Disagreements",
-    "## Key Risks",
-    "## Recommended Decision",
-    "## Action Plan",
-    "## Confidence",
+    "Structure your answer with exactly these section headings, written exactly as shown (they are already in Traditional Chinese):",
+    "## 執行摘要",
+    "## 共識",
+    "## 主要分歧",
+    "## 關鍵風險",
+    "## 建議決策",
+    "## 行動計畫",
+    "## 信心水準",
     "",
-    "In Confidence, give a level (High / Medium / Low) and what would change your mind.",
+    "Under 信心水準, give a level (高 / 中 / 低) and what would change your mind.",
+    "",
+    REPLY_LANGUAGE,
   ].join("\n")
 }
 

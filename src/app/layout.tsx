@@ -4,9 +4,9 @@ import { Sidebar } from "@/components/layout/sidebar"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "AI Council",
+  title: "AI 議會",
   description:
-    "Ask one question, get independent analysis, anonymous cross-critique and a chairman decision from multiple AI models.",
+    "一個問題，多個 AI 模型獨立分析、匿名互評，最後由主席整合出決策。",
 }
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="zh-Hant-TW">
       <body className="font-sans antialiased">
         <div className="flex min-h-screen">
           <Sidebar />

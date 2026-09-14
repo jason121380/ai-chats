@@ -12,13 +12,14 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { t } from "@/lib/i18n"
 
 const NAV = [
-  { href: "/", label: "New Chat", icon: MessageSquarePlus },
-  { href: "/council", label: "Council", icon: Gavel },
-  { href: "/history", label: "History", icon: History },
-  { href: "/usage", label: "Usage", icon: BarChart3 },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/", label: t.nav.newChat, icon: MessageSquarePlus },
+  { href: "/council", label: t.nav.council, icon: Gavel },
+  { href: "/history", label: t.nav.history, icon: History },
+  { href: "/usage", label: t.nav.usage, icon: BarChart3 },
+  { href: "/settings", label: t.nav.settings, icon: Settings },
 ]
 
 export function Sidebar() {
@@ -29,7 +30,7 @@ export function Sidebar() {
       <div className="flex items-center gap-2 px-5 py-5">
         <Users className="h-6 w-6" />
         <span className="text-lg font-semibold tracking-tight">
-          AI Council
+          {t.app.name}
         </span>
       </div>
       <nav className="flex flex-1 flex-col gap-1 px-3">
@@ -57,8 +58,8 @@ export function Sidebar() {
         })}
       </nav>
       <div className="px-5 py-4 text-xs leading-relaxed text-muted-foreground">
-        <div>Council · independent → critique → chairman</div>
-        <div>Discussion · everyone in one room</div>
+        <div>{t.nav.councilHint}</div>
+        <div>{t.nav.discussionHint}</div>
       </div>
     </aside>
   )

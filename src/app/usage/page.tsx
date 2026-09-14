@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { formatLatency, formatTokens, formatUsd } from "@/lib/utils"
+import { t } from "@/lib/i18n"
 import {
   PROVIDER_LABELS,
   type ModelUsageRowDto,
@@ -61,7 +62,7 @@ export default function UsagePage() {
         fetch(`/api/usage/models?${qs}`),
       ])
       if (!summaryRes.ok || !modelsRes.ok) {
-        throw new Error("Failed to load usage data")
+        throw new Error(t.errors.loadUsage)
       }
       setSummary((await summaryRes.json()) as UsageSummaryDto)
       setRows((await modelsRes.json()) as ModelUsageRowDto[])
@@ -80,19 +81,18 @@ export default function UsagePage() {
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Usage</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t.usage.title}</h1>
           <p className="text-sm text-muted-foreground">
-            Token, cost and latency analytics from the ModelRun billing
-            ledger.
+            {t.usage.subtitle}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {(
             [
-              ["today", "Today"],
-              ["7d", "7 Days"],
-              ["30d", "30 Days"],
-              ["custom", "Custom"],
+              ["today", t.usage.today],
+              ["7d", t.usage.days7],
+              ["30d", t.usage.days30],
+              ["custom", t.usage.custom],
             ] as Array<[RangeKey, string]>
           ).map(([key, label]) => (
             <Button
@@ -112,7 +112,9 @@ export default function UsagePage() {
                 value={customFrom}
                 onChange={(e) => setCustomFrom(e.target.value)}
               />
-              <span className="text-sm text-muted-foreground">to</span>
+              <span className="text-sm text-muted-foreground">
+                {t.usage.to}
+              </span>
               <Input
                 type="date"
                 className="h-9 w-40"
@@ -129,19 +131,19 @@ export default function UsagePage() {
 
       {summary && !loading && (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-          <StatCard label="Total Spend" value={formatUsd(summary.totalCostUsd)} />
+          <StatCard label={t.usage.totalSpend} value={formatUsd(summary.totalCostUsd)} />
           <StatCard
-            label="Total Tokens"
+            label={t.usage.totalTokens}
             value={formatTokens(summary.totalTokens)}
           />
-          <StatCard label="Total Calls" value={String(summary.calls)} />
+          <StatCard label={t.usage.totalCalls} value={String(summary.calls)} />
           <StatCard
-            label="Successful"
+            label={t.usage.successful}
             value={String(summary.successfulCalls)}
           />
-          <StatCard label="Failed" value={String(summary.failedCalls)} />
+          <StatCard label={t.usage.failed} value={String(summary.failedCalls)} />
           <StatCard
-            label="Avg Latency"
+            label={t.usage.avgLatency}
             value={formatLatency(summary.averageLatencyMs)}
           />
         </div>
@@ -152,18 +154,18 @@ export default function UsagePage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Model</TableHead>
-                <TableHead>Provider</TableHead>
-                <TableHead className="text-right">Calls</TableHead>
-                <TableHead className="text-right">Input Tokens</TableHead>
-                <TableHead className="text-right">Output Tokens</TableHead>
-                <TableHead className="text-right">Cached</TableHead>
-                <TableHead className="text-right">Reasoning</TableHead>
-                <TableHead className="text-right">Total Tokens</TableHead>
-                <TableHead className="text-right">Cost</TableHead>
-                <TableHead className="text-right">Avg Cost/Call</TableHead>
-                <TableHead className="text-right">Avg Latency</TableHead>
-                <TableHead className="text-right">Success Rate</TableHead>
+                <TableHead>{t.usage.colModel}</TableHead>
+                <TableHead>{t.usage.colProvider}</TableHead>
+                <TableHead className="text-right">{t.usage.colCalls}</TableHead>
+                <TableHead className="text-right">{t.usage.colInput}</TableHead>
+                <TableHead className="text-right">{t.usage.colOutput}</TableHead>
+                <TableHead className="text-right">{t.usage.colCached}</TableHead>
+                <TableHead className="text-right">{t.usage.colReasoning}</TableHead>
+                <TableHead className="text-right">{t.usage.colTotal}</TableHead>
+                <TableHead className="text-right">{t.usage.colCost}</TableHead>
+                <TableHead className="text-right">{t.usage.colAvgCost}</TableHead>
+                <TableHead className="text-right">{t.usage.colAvgLatency}</TableHead>
+                <TableHead className="text-right">{t.usage.colSuccessRate}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -173,7 +175,7 @@ export default function UsagePage() {
                     colSpan={12}
                     className="text-center text-sm text-muted-foreground"
                   >
-                    No model runs in this period.
+                    {t.usage.emptyRange}
                   </TableCell>
                 </TableRow>
               )}

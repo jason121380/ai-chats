@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { formatDate, t } from "@/lib/i18n"
 import {
   PROVIDER_LABELS,
   ROLE_LABELS,
@@ -32,16 +33,15 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t.settings.title}</h1>
         <p className="text-sm text-muted-foreground">
-          Model configuration and pricing. Pricing history is append-only —
-          historical ModelRun snapshots are never rewritten.
+          {t.settings.subtitle}
         </p>
       </div>
       <Tabs defaultValue="models">
         <TabsList>
-          <TabsTrigger value="models">Models</TabsTrigger>
-          <TabsTrigger value="pricing">Pricing</TabsTrigger>
+          <TabsTrigger value="models">{t.settings.tabModels}</TabsTrigger>
+          <TabsTrigger value="pricing">{t.settings.tabPricing}</TabsTrigger>
         </TabsList>
         <TabsContent value="models">
           <ModelsTab />
@@ -61,7 +61,7 @@ function ModelsTab() {
   const load = useCallback(() => {
     fetch("/api/models")
       .then(async (res) => {
-        if (!res.ok) throw new Error("Failed to load models")
+        if (!res.ok) throw new Error(t.errors.loadModels)
         setModels((await res.json()) as ModelConfigDto[])
       })
       .catch((err) =>
@@ -95,14 +95,14 @@ function ModelsTab() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Provider</TableHead>
-            <TableHead>Model</TableHead>
-            <TableHead>Enabled</TableHead>
-            <TableHead>Council Role</TableHead>
-            <TableHead className="text-right">Temperature</TableHead>
-            <TableHead className="text-right">Max Output</TableHead>
-            <TableHead>Pricing</TableHead>
-            <TableHead>API Key</TableHead>
+            <TableHead>{t.settings.colProvider}</TableHead>
+            <TableHead>{t.settings.colModel}</TableHead>
+            <TableHead>{t.settings.colEnabled}</TableHead>
+            <TableHead>{t.settings.colRole}</TableHead>
+            <TableHead className="text-right">{t.settings.colTemperature}</TableHead>
+            <TableHead className="text-right">{t.settings.colMaxOutput}</TableHead>
+            <TableHead>{t.settings.colPricing}</TableHead>
+            <TableHead>{t.settings.colApiKey}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -112,7 +112,7 @@ function ModelsTab() {
                 colSpan={8}
                 className="text-center text-sm text-muted-foreground"
               >
-                No models configured. Run <code>npm run db:seed</code>.
+                {t.settings.noModels}
               </TableCell>
             </TableRow>
           )}
@@ -154,16 +154,16 @@ function ModelsTab() {
               </TableCell>
               <TableCell>
                 {m.pricingConfigured ? (
-                  <Badge variant="success">configured</Badge>
+                  <Badge variant="success">{t.settings.pricingConfigured}</Badge>
                 ) : (
-                  <Badge variant="warning">not configured</Badge>
+                  <Badge variant="warning">{t.settings.pricingMissing}</Badge>
                 )}
               </TableCell>
               <TableCell>
                 {m.providerConfigured ? (
-                  <Badge variant="success">present</Badge>
+                  <Badge variant="success">{t.settings.apiKeyPresent}</Badge>
                 ) : (
-                  <Badge variant="destructive">missing</Badge>
+                  <Badge variant="destructive">{t.settings.apiKeyMissing}</Badge>
                 )}
               </TableCell>
             </TableRow>
@@ -181,7 +181,7 @@ function PricingTab() {
   useEffect(() => {
     fetch("/api/pricing")
       .then(async (res) => {
-        if (!res.ok) throw new Error("Failed to load pricing")
+        if (!res.ok) throw new Error(t.errors.loadPricing)
         setRows((await res.json()) as PricingRowDto[])
       })
       .catch((err) =>
@@ -197,14 +197,14 @@ function PricingTab() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Provider</TableHead>
-            <TableHead>Model</TableHead>
-            <TableHead className="text-right">Input / 1M</TableHead>
-            <TableHead className="text-right">Output / 1M</TableHead>
-            <TableHead className="text-right">Cached / 1M</TableHead>
-            <TableHead className="text-right">Reasoning / 1M</TableHead>
-            <TableHead>Effective</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead>{t.settings.colProvider}</TableHead>
+            <TableHead>{t.settings.colModel}</TableHead>
+            <TableHead className="text-right">{t.settings.colInputPer}</TableHead>
+            <TableHead className="text-right">{t.settings.colOutputPer}</TableHead>
+            <TableHead className="text-right">{t.settings.colCachedPer}</TableHead>
+            <TableHead className="text-right">{t.settings.colReasoningPer}</TableHead>
+            <TableHead>{t.settings.colEffective}</TableHead>
+            <TableHead>{t.settings.colStatus}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -214,7 +214,7 @@ function PricingTab() {
                 colSpan={8}
                 className="text-center text-sm text-muted-foreground"
               >
-                Pricing not configured. Add rows via seed or POST /api/pricing.
+                {t.settings.noPricing}
               </TableCell>
             </TableRow>
           )}
@@ -241,16 +241,16 @@ function PricingTab() {
                   {r.reasoningPerMillion ? `$${r.reasoningPerMillion}` : "—"}
                 </TableCell>
                 <TableCell className="text-xs text-muted-foreground">
-                  {new Date(r.effectiveFrom).toLocaleDateString()}
+                  {formatDate(r.effectiveFrom)}
                   {r.effectiveTo
-                    ? ` → ${new Date(r.effectiveTo).toLocaleDateString()}`
-                    : " → now"}
+                    ? ` → ${formatDate(r.effectiveTo)}`
+                    : ` → ${t.settings.now}`}
                 </TableCell>
                 <TableCell>
                   {active ? (
-                    <Badge variant="success">active</Badge>
+                    <Badge variant="success">{t.settings.active}</Badge>
                   ) : (
-                    <Badge variant="secondary">historical</Badge>
+                    <Badge variant="secondary">{t.settings.historical}</Badge>
                   )}
                 </TableCell>
               </TableRow>

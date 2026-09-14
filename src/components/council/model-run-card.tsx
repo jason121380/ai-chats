@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Markdown } from "@/components/ui/markdown"
 import { StatusBadge } from "@/components/models/model-picker"
 import { formatLatency, formatTokens, formatUsd } from "@/lib/utils"
+import { t } from "@/lib/i18n"
 import { PROVIDER_LABELS, ROLE_LABELS, type ModelRunDto } from "@/types/api"
 
 export function ModelRunCard({
@@ -36,7 +37,7 @@ export function ModelRunCard({
               </span>
               {running ? (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin" /> Running…
+                  <Loader2 className="h-3 w-3 animate-spin" /> {t.transcript.typing}
                 </span>
               ) : (
                 <StatusBadge status={run.status} />
@@ -53,22 +54,22 @@ export function ModelRunCard({
                 <div className="font-medium text-foreground">
                   {formatLatency(run.latencyMs)}
                 </div>
-                <div>latency</div>
+                <div>{t.stats.latency}</div>
               </div>
               <div>
                 <div className="font-medium text-foreground">
                   {formatTokens(run.inputTokens)} /{" "}
                   {formatTokens(run.outputTokens)}
                 </div>
-                <div>in / out tokens</div>
+                <div>{t.stats.inOutTokens}</div>
               </div>
               <div>
                 <div className="font-medium text-foreground">
                   {run.pricingStatus === "MISSING" && run.totalCostUsd === null
-                    ? "no price"
+                    ? t.stats.noPrice
                     : formatUsd(run.totalCostUsd)}
                 </div>
-                <div>cost</div>
+                <div>{t.stats.cost}</div>
               </div>
             </div>
           )}
@@ -77,7 +78,7 @@ export function ModelRunCard({
         {run?.status === "FAILED" || run?.status === "TIMEOUT" ? (
           <p className="mt-2 rounded bg-destructive/10 px-2 py-1 text-xs text-destructive">
             {run.errorCode ? `${run.errorCode}: ` : ""}
-            {run.errorMessage ?? "Unknown error"}
+            {run.errorMessage ?? t.errors.unknown}
           </p>
         ) : null}
 
@@ -94,7 +95,7 @@ export function ModelRunCard({
               ) : (
                 <ChevronDown className="mr-1 h-3 w-3" />
               )}
-              {open ? "Hide response" : "View response"}
+              {open ? t.transcript.hideResponse : t.transcript.viewResponse}
             </Button>
             {open && (
               <div className="mt-2 max-h-96 overflow-y-auto rounded-md border bg-muted/40 p-3">
