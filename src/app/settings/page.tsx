@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { Loader2 } from "lucide-react"
 
+import { PageBody, Topbar } from "@/components/layout/topbar"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -31,26 +32,23 @@ import {
 
 export default function SettingsPage() {
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t.settings.title}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t.settings.subtitle}
-        </p>
-      </div>
-      <Tabs defaultValue="models">
-        <TabsList>
-          <TabsTrigger value="models">{t.settings.tabModels}</TabsTrigger>
-          <TabsTrigger value="pricing">{t.settings.tabPricing}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="models">
-          <ModelsTab />
-        </TabsContent>
-        <TabsContent value="pricing">
-          <PricingTab />
-        </TabsContent>
-      </Tabs>
-    </div>
+    <>
+      <Topbar title={t.settings.title} subtitle={t.settings.subtitle} />
+      <PageBody>
+        <Tabs defaultValue="models">
+          <TabsList>
+            <TabsTrigger value="models">{t.settings.tabModels}</TabsTrigger>
+            <TabsTrigger value="pricing">{t.settings.tabPricing}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="models">
+            <ModelsTab />
+          </TabsContent>
+          <TabsContent value="pricing">
+            <PricingTab />
+          </TabsContent>
+        </Tabs>
+      </PageBody>
+    </>
   )
 }
 
@@ -88,10 +86,10 @@ function ModelsTab() {
   }
 
   if (error) return <p className="text-sm text-destructive">{error}</p>
-  if (!models) return <Loader2 className="h-5 w-5 animate-spin" />
+  if (!models) return <Loader2 className="h-5 w-5 animate-spin text-orange" />
 
   return (
-    <div className="rounded-lg border bg-background">
+    <div className="overflow-hidden rounded-[16px] border border-border bg-white">
       <Table>
         <TableHeader>
           <TableRow>
@@ -190,10 +188,10 @@ function PricingTab() {
   }, [])
 
   if (error) return <p className="text-sm text-destructive">{error}</p>
-  if (!rows) return <Loader2 className="h-5 w-5 animate-spin" />
+  if (!rows) return <Loader2 className="h-5 w-5 animate-spin text-orange" />
 
   return (
-    <div className="rounded-lg border bg-background">
+    <div className="overflow-hidden rounded-[16px] border border-border bg-white">
       <Table>
         <TableHeader>
           <TableRow>

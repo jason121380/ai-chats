@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 
+import { PageBody, Topbar } from "@/components/layout/topbar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -60,11 +61,11 @@ export default function SessionDetailPage() {
     return { byCouncil, standalone }
   }, [session])
 
-  if (error) return <p className="p-6 text-sm text-destructive">{error}</p>
+  if (error) return <p className="p-6 text-[13px] text-red">{error}</p>
   if (!session) {
     return (
       <div className="p-6">
-        <Loader2 className="h-5 w-5 animate-spin" />
+        <Loader2 className="h-5 w-5 animate-spin text-orange" />
       </div>
     )
   }
@@ -74,27 +75,26 @@ export default function SessionDetailPage() {
     session.messages.find((m) => m.source === "USER")?.content ?? ""
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{session.title}</h1>
-          <p className="text-sm text-muted-foreground">
-            <Badge variant="secondary" className="mr-2">
-              {modeLabel(session.mode)}
-            </Badge>
-            {formatDateTime(session.createdAt)}
-          </p>
-        </div>
-        <div className="text-right text-sm">
-          <div className="font-semibold">
-            {formatUsd(session.cost.totalCostUsd)} ·{" "}
-            {formatTokens(session.cost.totalTokens)} Token
+    <>
+      <Topbar
+        title={session.title}
+        actions={
+          <div className="text-right">
+            <div className="text-[13px] font-semibold text-ink">
+              {formatUsd(session.cost.totalCostUsd)} ·{" "}
+              {formatTokens(session.cost.totalTokens)} Token
+            </div>
+            <div className="text-[11px] text-gray-300">
+              {t.history.modelCalls(session.cost.modelCalls)}
+            </div>
           </div>
-          <div className="text-xs text-muted-foreground">
-            {t.history.modelCalls(session.cost.modelCalls)}
-          </div>
-        </div>
-      </div>
+        }
+      />
+      <PageBody width="narrow">
+        <p className="flex items-center gap-2 text-[12px] text-gray-500">
+          <Badge variant="secondary">{modeLabel(session.mode)}</Badge>
+          {formatDateTime(session.createdAt)}
+        </p>
 
       {isMultiModel ? (
         session.councilRuns.map((councilRun) => {
@@ -157,7 +157,7 @@ export default function SessionDetailPage() {
               className={
                 m.source === "USER"
                   ? "ml-auto max-w-[85%] rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground"
-                  : "mr-auto max-w-[85%] rounded-lg border bg-background px-3 py-2 text-sm"
+                  : "mr-auto max-w-[85%] rounded-lg border border-border bg-white px-3 py-2 text-sm"
               }
             >
               {m.source !== "USER" && (
@@ -183,7 +183,8 @@ export default function SessionDetailPage() {
           ))}
         </section>
       )}
-    </div>
+      </PageBody>
+    </>
   )
 }
 

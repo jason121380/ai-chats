@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Loader2 } from "lucide-react"
 
+import { PageBody, Topbar } from "@/components/layout/topbar"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,
@@ -33,20 +34,18 @@ export default function HistoryPage() {
   }, [])
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t.history.title}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t.history.subtitle}
-        </p>
-      </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      {!sessions && !error && <Loader2 className="h-5 w-5 animate-spin" />}
-      {sessions && sessions.length === 0 && (
-        <p className="text-sm text-muted-foreground">{t.history.empty}</p>
-      )}
-      {sessions && sessions.length > 0 && (
-        <div className="rounded-lg border bg-background">
+    <>
+      <Topbar title={t.history.title} subtitle={t.history.subtitle} />
+      <PageBody>
+        {error && <p className="text-[13px] text-red">{error}</p>}
+        {!sessions && !error && (
+          <Loader2 className="h-5 w-5 animate-spin text-orange" />
+        )}
+        {sessions && sessions.length === 0 && (
+          <p className="text-[13px] text-gray-500">{t.history.empty}</p>
+        )}
+        {sessions && sessions.length > 0 && (
+        <div className="overflow-hidden rounded-[16px] border border-border bg-white">
           <Table>
             <TableHeader>
               <TableRow>
@@ -89,7 +88,8 @@ export default function HistoryPage() {
             </TableBody>
           </Table>
         </div>
-      )}
-    </div>
+        )}
+      </PageBody>
+    </>
   )
 }

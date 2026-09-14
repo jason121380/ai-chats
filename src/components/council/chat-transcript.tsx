@@ -95,9 +95,9 @@ export function ChatTranscript({
                 : undefined
             }
           />
-          <div className="rounded-lg border border-primary/40 bg-background shadow-sm">
-            <div className="flex items-center gap-2 border-b bg-primary/5 px-4 py-2">
-              <Gavel className="h-4 w-4" />
+          <div className="rounded-lg border border-orange-border bg-white shadow-sm">
+            <div className="flex items-center gap-2 border-b border-orange-border bg-orange-bg px-4 py-2">
+              <Gavel className="h-4 w-4 text-orange" />
               <span className="text-sm font-semibold">
                 {isDiscussion
                   ? t.transcript.closingSummary

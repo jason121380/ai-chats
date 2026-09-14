@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Markdown } from "@/components/ui/markdown"
+import { PageBody, Topbar } from "@/components/layout/topbar"
 import { ModelRunCard } from "@/components/council/model-run-card"
 import { MultiModelPicker, modelKey } from "@/components/models/model-picker"
 import { useModels } from "@/components/models/use-models"
@@ -37,34 +38,31 @@ export default function NewChatPage() {
   const { models, loading } = useModels()
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t.chat.title}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t.chat.subtitle}
-        </p>
-      </div>
-      <Tabs defaultValue="solo">
-        <TabsList>
-          <TabsTrigger value="solo">{t.chat.solo}</TabsTrigger>
-          <TabsTrigger value="compare">{t.chat.compare}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="solo">
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <SoloChat models={models} />
-          )}
-        </TabsContent>
-        <TabsContent value="compare">
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Compare models={models} />
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
+    <>
+      <Topbar title={t.chat.title} subtitle={t.chat.subtitle} />
+      <PageBody width="narrow" className="max-w-4xl">
+        <Tabs defaultValue="solo">
+          <TabsList>
+            <TabsTrigger value="solo">{t.chat.solo}</TabsTrigger>
+            <TabsTrigger value="compare">{t.chat.compare}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="solo">
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin text-orange" />
+            ) : (
+              <SoloChat models={models} />
+            )}
+          </TabsContent>
+          <TabsContent value="compare">
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin text-orange" />
+            ) : (
+              <Compare models={models} />
+            )}
+          </TabsContent>
+        </Tabs>
+      </PageBody>
+    </>
   )
 }
 
@@ -185,7 +183,7 @@ function SoloChat({
           ))}
           {busy && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" /> {t.chat.thinking}
+              <Loader2 className="h-3 w-3 animate-spin text-orange" /> {t.chat.thinking}
             </div>
           )}
           {error && <p className="text-sm text-destructive">{error}</p>}
@@ -205,7 +203,12 @@ function SoloChat({
             }
           }}
         />
-        <Button onClick={send} disabled={busy || !input.trim()}>
+        <Button
+          size="icon"
+          onClick={send}
+          disabled={busy || !input.trim()}
+          aria-label={t.chat.send}
+        >
           <Send className="h-4 w-4" />
         </Button>
       </div>

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Gavel, Loader2, MessagesSquare } from "lucide-react"
 
+import { PageBody, Topbar } from "@/components/layout/topbar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -181,20 +182,18 @@ export default function CouncilPage() {
   const active = Boolean(run && !TERMINAL.includes(run.status)) || starting
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          {mode === "DISCUSSION"
-            ? t.council.discussionTitle
-            : t.council.title}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {mode === "DISCUSSION"
+    <>
+      <Topbar
+        title={
+          mode === "DISCUSSION" ? t.council.discussionTitle : t.council.title
+        }
+        subtitle={
+          mode === "DISCUSSION"
             ? t.council.discussionSubtitle
-            : t.council.subtitle}
-        </p>
-      </div>
-
+            : t.council.subtitle
+        }
+      />
+      <PageBody width="narrow">
       <ModeSwitch mode={mode} onChange={setMode} disabled={active} />
 
       <Card>
@@ -218,7 +217,7 @@ export default function CouncilPage() {
                 : t.council.members}
             </p>
             {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin text-orange" />
             ) : (
               <MultiModelPicker
                 models={models}
@@ -360,7 +359,8 @@ export default function CouncilPage() {
           <div ref={bottomRef} />
         </div>
       )}
-    </div>
+      </PageBody>
+    </>
   )
 }
 
@@ -401,13 +401,20 @@ function ModeSwitch({
           className={cn(
             "rounded-lg border px-4 py-3 text-left transition-colors",
             mode === o.value
-              ? "border-primary bg-primary/5"
-              : "hover:bg-accent",
+              ? "border-orange bg-orange-bg"
+              : "border-border bg-white hover:border-orange-border hover:bg-orange-bg",
             disabled && "opacity-60"
           )}
         >
-          <div className="text-sm font-semibold">{o.label}</div>
-          <div className="text-xs text-muted-foreground">{o.hint}</div>
+          <div
+            className={cn(
+              "text-[13px] font-semibold",
+              mode === o.value ? "text-orange" : "text-ink"
+            )}
+          >
+            {o.label}
+          </div>
+          <div className="text-[12px] text-gray-500">{o.hint}</div>
         </button>
       ))}
     </div>
@@ -416,9 +423,9 @@ function ModeSwitch({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border bg-background p-3 text-center">
-      <div className="text-lg font-bold">{value}</div>
-      <div className="text-xs text-muted-foreground">{label}</div>
+    <div className="rounded-[16px] border border-border bg-white p-3 text-center">
+      <div className="kpi-label mb-1">{label}</div>
+      <div className="kpi-value text-[20px]">{value}</div>
     </div>
   )
 }

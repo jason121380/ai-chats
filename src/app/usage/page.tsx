@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { formatLatency, formatTokens, formatUsd } from "@/lib/utils"
+import { PageBody, Topbar } from "@/components/layout/topbar"
 import { t } from "@/lib/i18n"
 import {
   PROVIDER_LABELS,
@@ -78,56 +79,51 @@ export default function UsagePage() {
   }, [load])
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t.usage.title}</h1>
-          <p className="text-sm text-muted-foreground">
-            {t.usage.subtitle}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {(
-            [
-              ["today", t.usage.today],
-              ["7d", t.usage.days7],
-              ["30d", t.usage.days30],
-              ["custom", t.usage.custom],
-            ] as Array<[RangeKey, string]>
-          ).map(([key, label]) => (
-            <Button
-              key={key}
-              size="sm"
-              variant={range === key ? "default" : "outline"}
-              onClick={() => setRange(key)}
-            >
-              {label}
-            </Button>
-          ))}
-          {range === "custom" && (
-            <div className="flex items-center gap-2">
-              <Input
-                type="date"
-                className="h-9 w-40"
-                value={customFrom}
-                onChange={(e) => setCustomFrom(e.target.value)}
-              />
-              <span className="text-sm text-muted-foreground">
-                {t.usage.to}
-              </span>
-              <Input
-                type="date"
-                className="h-9 w-40"
-                value={customTo}
-                onChange={(e) => setCustomTo(e.target.value)}
-              />
-            </div>
-          )}
-        </div>
-      </div>
+    <>
+      <Topbar
+        title={t.usage.title}
+        subtitle={t.usage.subtitle}
+        actions={(
+          [
+            ["today", t.usage.today],
+            ["7d", t.usage.days7],
+            ["30d", t.usage.days30],
+            ["custom", t.usage.custom],
+          ] as Array<[RangeKey, string]>
+        ).map(([key, label]) => (
+          <Button
+            key={key}
+            size="sm"
+            variant={range === key ? "default" : "outline"}
+            onClick={() => setRange(key)}
+          >
+            {label}
+          </Button>
+        ))}
+      />
+      <PageBody>
+        {/* The custom window lives here, not in the topbar: two date
+            fields would not survive that 60px band on a phone. */}
+        {range === "custom" && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              type="date"
+              className="w-40"
+              value={customFrom}
+              onChange={(e) => setCustomFrom(e.target.value)}
+            />
+            <span className="text-[13px] text-gray-500">{t.usage.to}</span>
+            <Input
+              type="date"
+              className="w-40"
+              value={customTo}
+              onChange={(e) => setCustomTo(e.target.value)}
+            />
+          </div>
+        )}
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      {loading && <Loader2 className="h-5 w-5 animate-spin" />}
+      {error && <p className="text-[13px] text-red">{error}</p>}
+      {loading && <Loader2 className="h-5 w-5 animate-spin text-orange" />}
 
       {summary && !loading && (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
@@ -150,7 +146,7 @@ export default function UsagePage() {
       )}
 
       {rows && !loading && (
-        <div className="rounded-lg border bg-background">
+        <div className="overflow-hidden rounded-[16px] border border-border bg-white">
           <Table>
             <TableHeader>
               <TableRow>
@@ -221,15 +217,16 @@ export default function UsagePage() {
           </Table>
         </div>
       )}
-    </div>
+      </PageBody>
+    </>
   )
 }
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border bg-background p-4">
-      <div className="text-xl font-bold">{value}</div>
-      <div className="text-xs text-muted-foreground">{label}</div>
+    <div className="kpi-card">
+      <div className="kpi-label">{label}</div>
+      <div className="kpi-value text-[22px]">{value}</div>
     </div>
   )
 }

@@ -3,22 +3,23 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Status pill — 11px semi-bold on a tinted background, the LURE Meta
+ * Platform `.badge` family. `white-space: nowrap` is load-bearing: in a
+ * narrow cell a CJK label like「進行中」otherwise wraps into three
+ * stacked characters and triples the row height.
+ */
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center whitespace-nowrap rounded-pill px-2 py-[2px] text-[11px] font-semibold",
   {
     variants: {
       variant: {
-        default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
-        success:
-          "border-transparent bg-emerald-100 text-emerald-800 hover:bg-emerald-100/80",
-        warning:
-          "border-transparent bg-amber-100 text-amber-800 hover:bg-amber-100/80",
+        default: "bg-orange-bg text-orange",
+        secondary: "bg-muted text-gray-500",
+        destructive: "bg-red-bg text-red",
+        outline: "border border-border-strong text-gray-500",
+        success: "bg-green-bg text-green",
+        warning: "bg-yellow-bg text-yellow",
       },
     },
     defaultVariants: {

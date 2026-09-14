@@ -4,13 +4,16 @@ import { cn } from "@/lib/utils"
 
 export type InputProps = React.InputHTMLAttributes<HTMLInputElement>
 
+/** Text field — 12px radius, hairline border, orange on focus. */
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, ...props }, ref) => {
     return (
       <input
         type={type}
         className={cn(
-          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          "flex h-[38px] w-full rounded-lg border border-border bg-white px-3 text-[13px] text-ink outline-none transition-colors",
+          "file:border-0 file:bg-transparent file:text-[13px] file:font-medium",
+          "placeholder:text-gray-300 focus:border-orange disabled:cursor-not-allowed disabled:opacity-60",
           className
         )}
         ref={ref}

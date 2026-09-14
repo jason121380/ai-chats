@@ -9,55 +9,114 @@ import {
   MessageSquarePlus,
   Settings,
   Users,
+  type LucideIcon,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { t } from "@/lib/i18n"
 
-const NAV = [
-  { href: "/", label: t.nav.newChat, icon: MessageSquarePlus },
-  { href: "/council", label: t.nav.council, icon: Gavel },
-  { href: "/history", label: t.nav.history, icon: History },
-  { href: "/usage", label: t.nav.usage, icon: BarChart3 },
-  { href: "/settings", label: t.nav.settings, icon: Settings },
+/**
+ * Left sidebar — 224px fixed column, ported from the LURE Meta Platform
+ * layout: 60px logo header, nav items grouped under 10px uppercase
+ * section labels, orange-tinted active state, hints pinned to the
+ * bottom above the safe area.
+ */
+
+interface NavItem {
+  href: string
+  label: string
+  icon: LucideIcon
+}
+
+interface NavGroup {
+  label: string
+  items: NavItem[]
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: "一般",
+    items: [
+      { href: "/", label: t.nav.newChat, icon: MessageSquarePlus },
+      { href: "/council", label: t.nav.council, icon: Gavel },
+    ],
+  },
+  {
+    label: "紀錄",
+    items: [
+      { href: "/history", label: t.nav.history, icon: History },
+      { href: "/usage", label: t.nav.usage, icon: BarChart3 },
+    ],
+  },
+  {
+    label: "設定",
+    items: [{ href: "/settings", label: t.nav.settings, icon: Settings }],
+  },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r bg-background md:flex">
-      <div className="flex items-center gap-2 px-5 py-5">
-        <Users className="h-6 w-6" />
-        <span className="text-lg font-semibold tracking-tight">
+    <aside className="sticky top-0 hidden h-screen w-sidebar shrink-0 flex-col border-r border-border bg-white md:flex">
+      {/* Logo header — same 60px band as the topbar next to it, so the
+          two align across the divider. */}
+      <div className="flex h-topbar shrink-0 items-center gap-2 border-b border-border px-4">
+        <Users className="h-[18px] w-[18px] shrink-0 text-orange" />
+        <span className="text-[15px] font-bold tracking-tight text-ink">
           {t.app.name}
         </span>
+        {/* Muted on purpose — it labels what this is, it must not
+            compete with the product name next to it. */}
+        <span className="shrink-0 rounded border border-orange-border bg-orange-bg px-1.5 py-px text-xxs font-medium text-orange-muted">
+          {t.app.tagline}
+        </span>
       </div>
-      <nav className="flex flex-1 flex-col gap-1 px-3">
-        {NAV.map((item) => {
-          const active =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(item.href)
-          const Icon = item.icon
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
+
+      <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-1.5">
+        {NAV_GROUPS.map((group, idx) => (
+          <div key={group.label}>
+            <div
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                "px-2.5 pb-0.5 pt-1.5 text-xxs font-semibold uppercase tracking-[0.8px] text-gray-300",
+                idx > 0 && "mt-1"
               )}
             >
-              <Icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          )
-        })}
+              {group.label}
+            </div>
+            {group.items.map((item) => {
+              const active =
+                item.href === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(item.href)
+              const Icon = item.icon
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "mb-0.5 flex min-h-[32px] select-none items-center gap-2.5 rounded-lg px-2.5 py-1.5",
+                    "text-[13px] font-medium transition-colors duration-150 active:scale-[0.98]",
+                    active
+                      ? "bg-orange-bg font-semibold text-orange"
+                      : "text-gray-500 hover:bg-orange-bg hover:text-orange"
+                  )}
+                >
+                  <span className="flex w-[18px] shrink-0 items-center justify-center">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                </Link>
+              )
+            })}
+          </div>
+        ))}
       </nav>
-      <div className="px-5 py-4 text-xs leading-relaxed text-muted-foreground">
+
+      <div
+        className="shrink-0 space-y-1 border-t border-border px-4 pt-3 text-[11px] leading-relaxed text-gray-300"
+        style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+      >
         <div>{t.nav.councilHint}</div>
         <div>{t.nav.discussionHint}</div>
       </div>

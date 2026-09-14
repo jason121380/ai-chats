@@ -101,6 +101,7 @@ export const t = {
     newConversation: "開新對話",
     emptyState: "問點什麼——對話內容與完整用量帳本都存在 PostgreSQL。",
     inputPlaceholder: "輸入訊息…",
+    send: "送出",
     thinking: "思考中…",
     comparePlaceholder: "同一個問題，同時問多個模型…",
     compare_: "開始比較",
