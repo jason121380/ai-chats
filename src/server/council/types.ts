@@ -28,6 +28,28 @@ export interface LabeledResponse extends StageResponse {
   label: string
 }
 
+/** One thing somebody said in a Discussion, in speaking order. */
+export interface DiscussionTurn {
+  provider: ProviderName
+  modelId: string
+  speakerName: string
+  role: CouncilRole
+  modelRunId: string
+  roundNumber: number
+  turnIndex: number
+  content: string
+}
+
+export interface DiscussionConfig {
+  runId: string
+  sessionId: string
+  question: string
+  participants: CouncilModelSelection[]
+  rounds: number
+  /** Optional closing summary. A discussion may end without one. */
+  summarizer: { provider: ProviderName; modelId: string } | null
+}
+
 export type CouncilEventType =
   | "council.started"
   | "stage.started"
@@ -41,6 +63,8 @@ export type CouncilEventType =
   | "chairman.completed"
   | "council.completed"
   | "council.failed"
+  | "round.started"
+  | "round.completed"
 
 export interface CouncilEvent {
   type: CouncilEventType
@@ -52,5 +76,7 @@ export interface CouncilEvent {
   status?: string
   delta?: string
   error?: string
+  roundNumber?: number
+  turnIndex?: number
   timestamp: string
 }

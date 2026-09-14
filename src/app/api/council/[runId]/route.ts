@@ -18,7 +18,11 @@ export async function GET(
       include: {
         userMessage: true,
         modelRuns: {
-          orderBy: { createdAt: "asc" },
+          orderBy: [
+            { roundNumber: "asc" },
+            { turnIndex: "asc" },
+            { createdAt: "asc" },
+          ],
           select: {
             id: true,
             provider: true,
@@ -26,6 +30,8 @@ export async function GET(
             stage: true,
             role: true,
             status: true,
+            roundNumber: true,
+            turnIndex: true,
             response: true,
             latencyMs: true,
             attemptCount: true,

@@ -25,7 +25,11 @@ export async function GET(
 
     const modelRuns = await prisma.modelRun.findMany({
       where: { sessionId: session.id },
-      orderBy: { createdAt: "asc" },
+      orderBy: [
+        { roundNumber: "asc" },
+        { turnIndex: "asc" },
+        { createdAt: "asc" },
+      ],
       select: {
         id: true,
         councilRunId: true,
@@ -34,6 +38,9 @@ export async function GET(
         stage: true,
         role: true,
         status: true,
+        roundNumber: true,
+        turnIndex: true,
+        attemptCount: true,
         response: true,
         latencyMs: true,
         inputTokens: true,

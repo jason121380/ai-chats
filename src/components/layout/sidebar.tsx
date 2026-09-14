@@ -56,8 +56,9 @@ export function Sidebar() {
           )
         })}
       </nav>
-      <div className="px-5 py-4 text-xs text-muted-foreground">
-        Round 1 → Critique → Chairman
+      <div className="px-5 py-4 text-xs leading-relaxed text-muted-foreground">
+        <div>Council · independent → critique → chairman</div>
+        <div>Discussion · everyone in one room</div>
       </div>
     </aside>
   )

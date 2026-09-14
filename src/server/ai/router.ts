@@ -21,6 +21,9 @@ export interface ModelCallSpec {
   modelId: string
   stage: ModelRunStage
   role?: CouncilRole
+  /** DISCUSSION only: speaking order within the run. */
+  roundNumber?: number
+  turnIndex?: number
   messages: AIMessage[]
   systemPrompt?: string
   temperature?: number
@@ -117,6 +120,8 @@ export async function executeModelRun(
       status: "RUNNING",
       prompt: serializePrompt(spec),
       startedAt,
+      roundNumber: spec.roundNumber ?? null,
+      turnIndex: spec.turnIndex ?? null,
     },
   })
 

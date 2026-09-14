@@ -25,6 +25,8 @@ export interface ModelRunDto {
   stage: string
   role: string
   status: string
+  roundNumber?: number | null
+  turnIndex?: number | null
   response?: string | null
   latencyMs: number | null
   attemptCount?: number
@@ -47,10 +49,13 @@ export interface ModelRunDto {
 export interface CouncilRunDto {
   id: string
   sessionId: string
+  kind: string
   status: string
   currentStage: string | null
-  chairmanProvider: string
-  chairmanModel: string
+  totalRounds: number | null
+  currentRound: number | null
+  chairmanProvider: string | null
+  chairmanModel: string | null
   startedAt: string | null
   completedAt: string | null
   totalInputTokens: number
@@ -90,6 +95,7 @@ export interface MessageDto {
 export interface SessionDetailDto extends SessionDto {
   messages: MessageDto[]
   councilRuns: Array<Omit<CouncilRunDto, "modelRuns" | "finalAnswer">>
+  /** ModelRun rows for the whole session, council and standalone alike. */
   modelRuns: ModelRunDto[]
   cost: {
     totalTokens: number

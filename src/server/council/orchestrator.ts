@@ -68,7 +68,7 @@ export async function runCouncil(
     })
 
     if (roundOne.responses.length === 0) {
-      await finalize(db, config.runId, "FAILED", "All Round 1 models failed")
+      await finalizeRun(db, config.runId, "FAILED", "All Round 1 models failed")
       emitCouncilEvent({
         type: "council.failed",
         runId: config.runId,
@@ -103,7 +103,7 @@ export async function runCouncil(
     )
 
     if (chairman.failed || !chairman.content) {
-      await finalize(
+      await finalizeRun(
         db,
         config.runId,
         "FAILED",
@@ -131,11 +131,11 @@ export async function runCouncil(
     const hadFailures =
       roundOne.failures > 0 || (!critique.skipped && critique.failures > 0)
 
-    await finalize(db, config.runId, hadFailures ? "PARTIAL" : "COMPLETED")
+    await finalizeRun(db, config.runId, hadFailures ? "PARTIAL" : "COMPLETED")
     emitCouncilEvent({ type: "council.completed", runId: config.runId })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    await finalize(db, config.runId, "FAILED", message).catch(() => {})
+    await finalizeRun(db, config.runId, "FAILED", message).catch(() => {})
     emitCouncilEvent({
       type: "council.failed",
       runId: config.runId,
@@ -149,7 +149,7 @@ export async function runCouncil(
  * CouncilRun totals are a convenience snapshot; ModelRun remains the
  * authoritative billing ledger.
  */
-async function finalize(
+export async function finalizeRun(
   db: PrismaClient,
   runId: string,
   status: "COMPLETED" | "PARTIAL" | "FAILED",
@@ -210,7 +210,13 @@ async function finalize(
   })
 }
 
-const NON_TERMINAL = ["PENDING", "ROUND_1", "CRITIQUE", "CHAIRMAN"] as const
+const NON_TERMINAL = [
+  "PENDING",
+  "ROUND_1",
+  "CRITIQUE",
+  "CHAIRMAN",
+  "DISCUSSING",
+] as const
 
 /**
  * Stale-run recovery: council execution is in-process (no durable queue), so

@@ -2,12 +2,18 @@
 
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import remarkCjkFriendly from "remark-cjk-friendly"
 
 import { cn } from "@/lib/utils"
 
 /**
  * Renders model output as Markdown. Chairman answers use headings, tables
  * and lists, so raw text would be unreadable.
+ *
+ * remark-cjk-friendly is required, not optional: CommonMark's flanking rules
+ * mean `而是**「為什麼」**` renders as literal asterisks, because the delimiter
+ * sits between a CJK character and CJK punctuation. Models write like that
+ * constantly in Chinese.
  */
 export function Markdown({
   children,
@@ -19,7 +25,7 @@ export function Markdown({
   return (
     <div className={cn("space-y-3 text-sm leading-relaxed", className)}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkCjkFriendly]}
         components={{
           h1: ({ children }) => (
             <h1 className="mt-5 text-lg font-bold tracking-tight first:mt-0">

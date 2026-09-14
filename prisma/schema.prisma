@@ -21,6 +21,7 @@ enum SessionMode {
   SOLO
   COMPARE
   COUNCIL
+  DISCUSSION
   BATTLE
 }
 
@@ -56,6 +57,7 @@ enum CouncilRunStatus {
   ROUND_1
   CRITIQUE
   CHAIRMAN
+  DISCUSSING
   COMPLETED
   PARTIAL
   FAILED
@@ -67,6 +69,15 @@ enum ModelRunStage {
   ROUND_1
   CRITIQUE
   CHAIRMAN
+  DISCUSSION
+}
+
+/// A multi-model run is either a structured Council (independent → anonymous
+/// critique → chairman) or an open Discussion (models speak in turn and can
+/// see each other). Both share the same ledger and analytics.
+enum CouncilRunKind {
+  COUNCIL
+  DISCUSSION
 }
 
 enum CouncilRole {
@@ -154,11 +165,18 @@ model CouncilRun {
   userMessageId String  @db.Uuid
   userMessage   Message @relation("CouncilUserMessage", fields: [userMessageId], references: [id], onDelete: Cascade)
 
+  kind         CouncilRunKind   @default(COUNCIL)
   status       CouncilRunStatus @default(PENDING)
   currentStage ModelRunStage?
 
-  chairmanProvider ProviderName
-  chairmanModel    String
+  /// DISCUSSION only: how many speaking rounds were requested, and which
+  /// round is in progress.
+  totalRounds  Int?
+  currentRound Int?
+
+  /// A Discussion may run without a closing summary, so these are optional.
+  chairmanProvider ProviderName?
+  chairmanModel    String?
 
   startedAt   DateTime?
   completedAt DateTime?
@@ -182,6 +200,7 @@ model CouncilRun {
 
   @@index([sessionId, createdAt])
   @@index([status])
+  @@index([kind])
 }
 
 // ─────────────────────────────────────────────
@@ -202,6 +221,11 @@ model ModelRun {
   stage  ModelRunStage
   role   CouncilRole    @default(GENERAL)
   status ModelRunStatus @default(PENDING)
+
+  /// DISCUSSION only: speaking order, so the transcript replays exactly as it
+  /// happened rather than being reconstructed from near-identical timestamps.
+  roundNumber Int?
+  turnIndex   Int?
 
   prompt   String  @db.Text
   response String? @db.Text
