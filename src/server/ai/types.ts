@@ -85,7 +85,7 @@ export class ProviderError extends Error {
       cause?: unknown
     }
   ) {
-    super(message)
+    super(message, options.cause !== undefined ? { cause: options.cause } : undefined)
     this.name = "ProviderError"
     this.code = options.code
     this.httpStatus = options.httpStatus
@@ -94,10 +94,6 @@ export class ProviderError extends Error {
       (options.code === "RATE_LIMITED" ||
         options.code === "SERVER_ERROR" ||
         options.code === "NETWORK")
-    if (options.cause !== undefined) {
-      // @ts-expect-error -- Error cause is supported at runtime on Node 18+
-      this.cause = options.cause
-    }
   }
 }
 
