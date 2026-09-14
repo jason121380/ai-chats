@@ -1,0 +1,311 @@
+// AI Council — Prisma schema
+// PostgreSQL is the single source of truth for conversations, council runs,
+// model runs (the billing ledger), model configuration, and pricing.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters", "queryCompiler"]
+  engineType      = "client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum SessionMode {
+  SOLO
+  COMPARE
+  COUNCIL
+  BATTLE
+}
+
+enum SessionStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum MessageSource {
+  USER
+  MODEL
+  CHAIRMAN
+  SYSTEM
+}
+
+enum ProviderName {
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+  XAI
+  MUSE
+  SPARK
+}
+
+enum CouncilRunStatus {
+  PENDING
+  ROUND_1
+  CRITIQUE
+  CHAIRMAN
+  COMPLETED
+  PARTIAL
+  FAILED
+}
+
+enum ModelRunStage {
+  SOLO
+  COMPARE
+  ROUND_1
+  CRITIQUE
+  CHAIRMAN
+}
+
+enum CouncilRole {
+  STRATEGIST
+  RISK_ANALYST
+  RESEARCHER
+  DEVILS_ADVOCATE
+  CREATIVE
+  EXECUTION
+  CHAIRMAN
+  GENERAL
+}
+
+enum ModelRunStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  TIMEOUT
+  CANCELLED
+}
+
+enum PricingStatus {
+  CALCULATED
+  MISSING
+  UNSUPPORTED
+}
+
+// ─────────────────────────────────────────────
+// Core tables
+// ─────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions Session[]
+}
+
+model Session {
+  id     String        @id @default(uuid()) @db.Uuid
+  userId String?       @db.Uuid
+  user   User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  title  String
+  mode   SessionMode
+  status SessionStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages    Message[]
+  councilRuns CouncilRun[]
+  modelRuns   ModelRun[]
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([updatedAt])
+}
+
+model Message {
+  id        String        @id @default(uuid()) @db.Uuid
+  sessionId String        @db.Uuid
+  session   Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      MessageRole
+  source    MessageSource
+  content   String        @db.Text
+
+  modelRunId String?   @db.Uuid
+  modelRun   ModelRun? @relation(fields: [modelRunId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  councilRunsAsUserMessage CouncilRun[] @relation("CouncilUserMessage")
+
+  @@index([sessionId, createdAt])
+}
+
+model CouncilRun {
+  id            String  @id @default(uuid()) @db.Uuid
+  sessionId     String  @db.Uuid
+  session       Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userMessageId String  @db.Uuid
+  userMessage   Message @relation("CouncilUserMessage", fields: [userMessageId], references: [id], onDelete: Cascade)
+
+  status       CouncilRunStatus @default(PENDING)
+  currentStage ModelRunStage?
+
+  chairmanProvider ProviderName
+  chairmanModel    String
+
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  totalInputTokens       Int @default(0)
+  totalOutputTokens      Int @default(0)
+  totalCachedInputTokens Int @default(0)
+  totalReasoningTokens   Int @default(0)
+  totalTokens            Int @default(0)
+
+  totalCostUsd Decimal? @db.Decimal(18, 10)
+
+  totalLatencyMs Int?
+
+  errorMessage String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  modelRuns ModelRun[]
+
+  @@index([sessionId, createdAt])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────
+// ModelRun — the billing ledger.
+// Every billable AI API call creates exactly one auditable ModelRun record.
+// ─────────────────────────────────────────────
+
+model ModelRun {
+  id           String      @id @default(uuid()) @db.Uuid
+  sessionId    String      @db.Uuid
+  session      Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  councilRunId String?     @db.Uuid
+  councilRun   CouncilRun? @relation(fields: [councilRunId], references: [id], onDelete: SetNull)
+
+  provider ProviderName
+  modelId  String
+
+  stage  ModelRunStage
+  role   CouncilRole    @default(GENERAL)
+  status ModelRunStatus @default(PENDING)
+
+  prompt   String  @db.Text
+  response String? @db.Text
+
+  startedAt   DateTime?
+  completedAt DateTime?
+  latencyMs   Int?
+
+  attemptCount Int @default(1)
+
+  inputTokens  Int?
+  outputTokens Int?
+  totalTokens  Int?
+
+  cachedInputTokens Int?
+  reasoningTokens   Int?
+
+  providerRequestId String?
+  finishReason      String?
+
+  errorCode    String?
+  errorMessage String? @db.Text
+
+  rawUsage            Json?
+  rawResponseMetadata Json?
+
+  // ── Pricing snapshot (immutable record of the price in force at call time)
+  inputPricePerMillionUsd       Decimal? @db.Decimal(18, 10)
+  outputPricePerMillionUsd      Decimal? @db.Decimal(18, 10)
+  cachedInputPricePerMillionUsd Decimal? @db.Decimal(18, 10)
+  reasoningPricePerMillionUsd   Decimal? @db.Decimal(18, 10)
+
+  // ── Calculated cost
+  inputCostUsd      Decimal? @db.Decimal(18, 10)
+  outputCostUsd     Decimal? @db.Decimal(18, 10)
+  cachedInputCostUsd Decimal? @db.Decimal(18, 10)
+  reasoningCostUsd  Decimal? @db.Decimal(18, 10)
+  totalCostUsd      Decimal? @db.Decimal(18, 10)
+
+  pricingStatus      PricingStatus @default(MISSING)
+  pricingEffectiveAt DateTime?
+  pricingSource      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages Message[]
+
+  @@index([councilRunId])
+  @@index([sessionId])
+  @@index([provider, modelId])
+  @@index([stage])
+  @@index([status])
+  @@index([startedAt])
+}
+
+// ─────────────────────────────────────────────
+// Configuration tables
+// ─────────────────────────────────────────────
+
+model ModelConfig {
+  id       String       @id @default(uuid()) @db.Uuid
+  provider ProviderName
+  modelId  String
+
+  displayName String
+  enabled     Boolean @default(true)
+
+  supportsStreaming Boolean @default(true)
+  supportsVision    Boolean @default(false)
+  supportsReasoning Boolean @default(false)
+
+  defaultRole CouncilRole @default(GENERAL)
+
+  sortOrder Int @default(0)
+
+  temperature     Float?
+  maxOutputTokens Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, modelId])
+}
+
+model ModelPricing {
+  id       String       @id @default(uuid()) @db.Uuid
+  provider ProviderName
+  modelId  String
+
+  currency String @default("USD")
+
+  inputPerMillion       Decimal  @db.Decimal(18, 10)
+  outputPerMillion      Decimal  @db.Decimal(18, 10)
+  cachedInputPerMillion Decimal? @db.Decimal(18, 10)
+  reasoningPerMillion   Decimal? @db.Decimal(18, 10)
+
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+
+  source String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([provider, modelId, effectiveFrom])
+}
