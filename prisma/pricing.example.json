@@ -1,0 +1,33 @@
+[
+  {
+    "provider": "OPENAI",
+    "modelId": "gpt-5.1",
+    "inputPerMillion": "0.00",
+    "outputPerMillion": "0.00",
+    "cachedInputPerMillion": null,
+    "reasoningPerMillion": null,
+    "source": "https://platform.openai.com/docs/pricing — FILL IN REAL PRICES"
+  },
+  {
+    "provider": "ANTHROPIC",
+    "modelId": "claude-sonnet-4-5",
+    "inputPerMillion": "0.00",
+    "outputPerMillion": "0.00",
+    "cachedInputPerMillion": null,
+    "source": "https://www.anthropic.com/pricing — FILL IN REAL PRICES"
+  },
+  {
+    "provider": "GOOGLE",
+    "modelId": "gemini-2.5-pro",
+    "inputPerMillion": "0.00",
+    "outputPerMillion": "0.00",
+    "source": "https://ai.google.dev/pricing — FILL IN REAL PRICES"
+  },
+  {
+    "provider": "XAI",
+    "modelId": "grok-4",
+    "inputPerMillion": "0.00",
+    "outputPerMillion": "0.00",
+    "source": "https://docs.x.ai — FILL IN REAL PRICES"
+  }
+]
