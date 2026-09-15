@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Loader2 } from "lucide-react"
 
-import { PageBody, Topbar } from "@/components/layout/topbar"
+import { PageShell } from "@/components/layout/page-shell"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,
@@ -34,18 +34,16 @@ export default function HistoryPage() {
   }, [])
 
   return (
-    <>
-      <Topbar title={t.history.title} subtitle={t.history.subtitle} />
-      <PageBody>
-        {error && <p className="text-[13px] text-red">{error}</p>}
+    <PageShell title={t.history.title} description={t.history.subtitle}>
+        {error && <p className="text-sm text-red-500">{error}</p>}
         {!sessions && !error && (
-          <Loader2 className="h-5 w-5 animate-spin text-orange" />
+          <Loader2 className="h-5 w-5 animate-spin text-rose-brand" />
         )}
         {sessions && sessions.length === 0 && (
-          <p className="text-[13px] text-gray-500">{t.history.empty}</p>
+          <p className="text-sm text-gray-500">{t.history.empty}</p>
         )}
         {sessions && sessions.length > 0 && (
-        <div className="overflow-hidden rounded-[16px] border border-border bg-white">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
           <Table>
             <TableHeader>
               <TableRow>
@@ -89,7 +87,6 @@ export default function HistoryPage() {
           </Table>
         </div>
         )}
-      </PageBody>
-    </>
+    </PageShell>
   )
 }

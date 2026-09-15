@@ -3,81 +3,58 @@
 @tailwind utilities;
 
 /*
- * Design tokens — the LURE Meta Platform palette (see luredash
- * `style.md`). The shadcn semantic variables below are the SAME names
- * the generated components already use; only their values changed, so
- * every existing page picks up the brand without being edited.
+ * Tokens follow designer_web's STYLE.md: rose-brand on gray-50, Tailwind's
+ * stock neutral scale, one small radius, no shadows.
  *
- * Literal hex is kept in a comment next to each line: these numbers come
- * from a shared spec, and an HSL triple alone is unreviewable.
+ * These are the SAME shadcn variable names the generated components already
+ * use — only the values changed, so every page picks up the palette without
+ * being edited. Each line keeps the literal hex in a comment: an HSL triple
+ * on its own cannot be checked against the source design.
  */
 @layer base {
   :root {
-    --background: 0 0% 98%; /* #FAFAFA warm white */
-    --foreground: 0 0% 10.2%; /* #1A1A1A */
-    --card: 0 0% 100%; /* #FFFFFF */
-    --card-foreground: 0 0% 10.2%;
+    --background: 210 20% 98%; /* gray-50 #F9FAFB — the work surface */
+    --foreground: 221 39% 11%; /* gray-900 #111827 */
+    --card: 0 0% 100%; /* white panels on the gray surface */
+    --card-foreground: 221 39% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10.2%;
-    --primary: 18 100% 58.6%; /* #FF6B2C brand orange */
+    --popover-foreground: 221 39% 11%;
+    --primary: 7 38% 62.4%; /* rose-brand #C4837A */
     --primary-foreground: 0 0% 100%;
-    --secondary: 20 100% 97.1%; /* #FFF5F0 orange bg */
-    --secondary-foreground: 18 100% 58.6%;
-    --muted: 0 0% 96.1%; /* #F5F5F5 */
-    --muted-foreground: 0 0% 40%; /* #666666 gray-500 */
-    --accent: 20 100% 97.1%; /* #FFF5F0 — hover tint everywhere */
-    --accent-foreground: 18 100% 58.6%;
-    --destructive: 0 66% 46.7%; /* #C62828 */
+    --secondary: 0 0% 100%; /* 次按鈕 is white + gray border, not a tint */
+    --secondary-foreground: 220 9% 46.1%; /* gray-500 #6B7280 */
+    --muted: 220 14% 95.9%; /* gray-100 #F3F4F6 */
+    --muted-foreground: 220 9% 46.1%; /* gray-500 */
+    --accent: 210 20% 98%; /* gray-50 — the hover tint */
+    --accent-foreground: 221 39% 11%;
+    --destructive: 0 84% 60.2%; /* red-500 #EF4444 */
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 94.1%; /* #F0F0F0 */
-    --input: 0 0% 87.8%; /* #E0E0E0 border-strong */
-    --ring: 18 100% 58.6%;
-    --radius: 12px;
-
-    /* Raw tokens for CSS that can't go through Tailwind (component
-       layer below). Same values, same names as luredash tokens.css. */
-    --orange: #ff6b2c;
-    --orange-dark: #e55a1c;
-    --orange-bg: #fff5f0;
-    --orange-border: #ffe8d9;
-    --orange-muted: #b07a50;
-    --black: #1a1a1a;
-    --gray-500: #666666;
-    --gray-300: #aaaaaa;
-    --warm-white: #fafafa;
-    --white: #ffffff;
-    --border-color: #f0f0f0;
-    --border-strong: #e0e0e0;
-    --green: #2e7d32;
-    --green-bg: #e8f5e9;
-    --red: #c62828;
-    --red-bg: #ffebee;
-    --yellow: #e65100;
-    --yellow-bg: #fff3e0;
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
-    --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.08);
+    --border: 220 13% 91%; /* gray-200 #E5E7EB */
+    --input: 220 13% 91%;
+    --ring: 7 43% 87.6%; /* rose-light #EDD5D2 — the focus ring */
+    --radius: 0.5rem; /* rounded-lg, everywhere */
   }
 
   .dark {
-    --background: 0 0% 8%;
+    --background: 221 39% 8%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 11%;
+    --card: 221 30% 12%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 11%;
+    --popover: 221 30% 12%;
     --popover-foreground: 0 0% 98%;
-    --primary: 18 100% 58.6%;
+    --primary: 7 38% 62.4%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 18 30% 16%;
-    --secondary-foreground: 18 100% 70%;
-    --muted: 0 0% 16%;
-    --muted-foreground: 0 0% 65%;
-    --accent: 18 30% 16%;
-    --accent-foreground: 18 100% 70%;
-    --destructive: 0 66% 46.7%;
+    --secondary: 221 30% 16%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 221 30% 16%;
+    --muted-foreground: 220 9% 65%;
+    --accent: 221 30% 16%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 20%;
-    --input: 0 0% 26%;
-    --ring: 18 100% 58.6%;
+    --border: 221 20% 22%;
+    --input: 221 20% 22%;
+    --ring: 7 38% 40%;
   }
 }
 
@@ -89,18 +66,34 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  body {
-    @apply bg-background text-foreground;
-    font-size: 14px;
-    line-height: 1.5;
+  html {
+    scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
   }
 
-  a {
-    color: var(--orange);
-    text-decoration: none;
+  ::selection {
+    @apply bg-rose-brand text-white;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-400;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-rose-brand;
   }
 
   button,
@@ -114,103 +107,9 @@
   }
 }
 
-@layer components {
-  /*
-   * Checkbox — white check on orange. NEVER use `accent-color` inline;
-   * always this class (luredash style.md, 禁止事項).
-   */
-  .custom-cb {
-    appearance: none;
-    -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--border-color);
-    border-radius: 4px;
-    background: var(--white);
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: all 0.15s;
-  }
-  .custom-cb:checked {
-    background: var(--orange);
-    border-color: var(--orange);
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 6l3 3 5-5' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-size: 75% 75%;
-    background-repeat: no-repeat;
-    background-position: center;
-  }
-
-  /* Loading spinner — 18px, orange top border. Declares its own
-     keyframes: Tailwind only emits `spin` when some utility uses it. */
-  @keyframes lure-spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-  .spinner {
-    width: 18px;
-    height: 18px;
-    border: 2px solid var(--border-color);
-    border-top-color: var(--orange);
-    border-radius: 50%;
-    animation: lure-spin 0.7s linear infinite;
-  }
-
-  /* KPI card — 16px radius, flat border, tabular numerals. */
-  .kpi-card {
-    background: var(--white);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 18px 20px;
-  }
-  .kpi-label {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--gray-300);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
-  }
-  .kpi-value {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--black);
-    letter-spacing: -0.5px;
-    font-variant-numeric: tabular-nums;
-  }
-  .kpi-sub {
-    font-size: 12px;
-    color: var(--gray-500);
-    margin-top: 3px;
-  }
-}
-
-@layer utilities {
-  /* Tabular numerals for any numeric cell. */
-  .num {
-    font-variant-numeric: tabular-nums;
-  }
-}
-
-/* Scrollbar — thin, neutral, matches luredash. */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--gray-300);
-}
-
 @media (max-width: 768px) {
-  /* 16px prevents iOS Safari from auto-zooming on focus; 40px is the
-     minimum comfortable touch target. */
+  /* 16px stops iOS Safari auto-zooming on focus; 40px is the minimum
+     comfortable touch target. */
   input[type="text"],
   input[type="search"],
   input[type="number"],
@@ -222,11 +121,6 @@
   textarea {
     font-size: 16px !important;
     min-height: 40px;
-  }
-
-  .custom-cb {
-    width: 20px !important;
-    height: 20px !important;
   }
 
   /* iOS-native apps show no scrollbar track; content stays scrollable. */

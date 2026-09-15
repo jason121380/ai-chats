@@ -58,7 +58,7 @@ export function ChatMessage({
             {ROLE_LABELS[run.role] ?? run.role}
           </span>
           {time && (
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {formatTime(time)}
             </span>
           )}
@@ -85,8 +85,8 @@ export function ChatMessage({
         ) : (
           <div
             className={cn(
-              "mt-1 overflow-hidden rounded-lg border border-border bg-white",
-              highlight && "border-orange-border shadow-sm"
+              "mt-1 overflow-hidden rounded-lg border border-gray-200 bg-white",
+              highlight && "border-rose-brand"
             )}
           >
             <div className="flex">
@@ -105,7 +105,7 @@ export function ChatMessage({
         )}
 
         {!failed && (
-          <div className="mt-1 flex flex-wrap gap-x-3 text-[11px] text-muted-foreground">
+          <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted-foreground">
             <span>{formatLatency(run.latencyMs)}</span>
             <span>
               {formatTokens(run.inputTokens)} / {formatTokens(run.outputTokens)}{" "}
@@ -195,7 +195,7 @@ export function ChatQuestion({ content }: { content: string }) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-semibold">{t.transcript.you}</div>
-        <div className="mt-1 whitespace-pre-wrap rounded-lg border border-orange-border bg-orange-bg px-3 py-2.5 text-sm">
+        <div className="mt-1 whitespace-pre-wrap rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm">
           {content}
         </div>
       </div>

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Gavel, Loader2, MessagesSquare } from "lucide-react"
 
-import { PageBody, Topbar } from "@/components/layout/topbar"
+import { PageShell } from "@/components/layout/page-shell"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -182,18 +182,15 @@ export default function CouncilPage() {
   const active = Boolean(run && !TERMINAL.includes(run.status)) || starting
 
   return (
-    <>
-      <Topbar
-        title={
-          mode === "DISCUSSION" ? t.council.discussionTitle : t.council.title
-        }
-        subtitle={
-          mode === "DISCUSSION"
-            ? t.council.discussionSubtitle
-            : t.council.subtitle
-        }
-      />
-      <PageBody width="narrow">
+    <PageShell
+      width="narrow"
+      title={mode === "DISCUSSION" ? t.council.discussionTitle : t.council.title}
+      description={
+        mode === "DISCUSSION"
+          ? t.council.discussionSubtitle
+          : t.council.subtitle
+      }
+    >
       <ModeSwitch mode={mode} onChange={setMode} disabled={active} />
 
       <Card>
@@ -217,7 +214,7 @@ export default function CouncilPage() {
                 : t.council.members}
             </p>
             {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin text-orange" />
+              <Loader2 className="h-4 w-4 animate-spin text-rose-brand" />
             ) : (
               <MultiModelPicker
                 models={models}
@@ -359,8 +356,7 @@ export default function CouncilPage() {
           <div ref={bottomRef} />
         </div>
       )}
-      </PageBody>
-    </>
+    </PageShell>
   )
 }
 
@@ -401,20 +397,20 @@ function ModeSwitch({
           className={cn(
             "rounded-lg border px-4 py-3 text-left transition-colors",
             mode === o.value
-              ? "border-orange bg-orange-bg"
-              : "border-border bg-white hover:border-orange-border hover:bg-orange-bg",
+              ? "border-rose-brand bg-rose-light/40"
+              : "border-gray-200 bg-white hover:border-rose-brand",
             disabled && "opacity-60"
           )}
         >
           <div
             className={cn(
-              "text-[13px] font-semibold",
-              mode === o.value ? "text-orange" : "text-ink"
+              "text-sm font-semibold",
+              mode === o.value ? "text-rose-dark" : "text-gray-900"
             )}
           >
             {o.label}
           </div>
-          <div className="text-[12px] text-gray-500">{o.hint}</div>
+          <div className="text-xs text-gray-500">{o.hint}</div>
         </button>
       ))}
     </div>
@@ -423,9 +419,11 @@ function ModeSwitch({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[16px] border border-border bg-white p-3 text-center">
-      <div className="kpi-label mb-1">{label}</div>
-      <div className="kpi-value text-[20px]">{value}</div>
+    <div className="rounded-lg border border-gray-200 bg-white p-4 text-center">
+      <div className="text-xs font-medium text-gray-500">{label}</div>
+      <div className="mt-1 text-xl font-semibold tabular-nums text-gray-900">
+        {value}
+      </div>
     </div>
   )
 }

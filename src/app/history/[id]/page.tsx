@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 
-import { PageBody, Topbar } from "@/components/layout/topbar"
+import { PageShell } from "@/components/layout/page-shell"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -61,12 +61,10 @@ export default function SessionDetailPage() {
     return { byCouncil, standalone }
   }, [session])
 
-  if (error) return <p className="p-6 text-[13px] text-red">{error}</p>
+  if (error) return <p className="text-sm text-red-500">{error}</p>
   if (!session) {
     return (
-      <div className="p-6">
-        <Loader2 className="h-5 w-5 animate-spin text-orange" />
-      </div>
+      <Loader2 className="h-5 w-5 animate-spin text-rose-brand" />
     )
   }
 
@@ -75,26 +73,27 @@ export default function SessionDetailPage() {
     session.messages.find((m) => m.source === "USER")?.content ?? ""
 
   return (
-    <>
-      <Topbar
-        title={session.title}
-        actions={
-          <div className="text-right">
-            <div className="text-[13px] font-semibold text-ink">
-              {formatUsd(session.cost.totalCostUsd)} ·{" "}
-              {formatTokens(session.cost.totalTokens)} Token
-            </div>
-            <div className="text-[11px] text-gray-300">
-              {t.history.modelCalls(session.cost.modelCalls)}
-            </div>
-          </div>
-        }
-      />
-      <PageBody width="narrow">
-        <p className="flex items-center gap-2 text-[12px] text-gray-500">
+    <PageShell
+      width="narrow"
+      title={session.title}
+      description={
+        <span className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary">{modeLabel(session.mode)}</Badge>
           {formatDateTime(session.createdAt)}
-        </p>
+        </span>
+      }
+      actions={
+        <div className="text-right">
+          <div className="text-sm font-semibold text-gray-900">
+            {formatUsd(session.cost.totalCostUsd)} ·{" "}
+            {formatTokens(session.cost.totalTokens)} Token
+          </div>
+          <div className="text-xs text-gray-400">
+            {t.history.modelCalls(session.cost.modelCalls)}
+          </div>
+        </div>
+      }
+    >
 
       {isMultiModel ? (
         session.councilRuns.map((councilRun) => {
@@ -183,8 +182,7 @@ export default function SessionDetailPage() {
           ))}
         </section>
       )}
-      </PageBody>
-    </>
+    </PageShell>
   )
 }
 

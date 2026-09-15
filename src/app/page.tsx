@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Markdown } from "@/components/ui/markdown"
-import { PageBody, Topbar } from "@/components/layout/topbar"
+import { PageShell } from "@/components/layout/page-shell"
 import { ModelRunCard } from "@/components/council/model-run-card"
 import { MultiModelPicker, modelKey } from "@/components/models/model-picker"
 import { useModels } from "@/components/models/use-models"
@@ -38,31 +38,28 @@ export default function NewChatPage() {
   const { models, loading } = useModels()
 
   return (
-    <>
-      <Topbar title={t.chat.title} subtitle={t.chat.subtitle} />
-      <PageBody width="narrow" className="max-w-4xl">
-        <Tabs defaultValue="solo">
+    <PageShell title={t.chat.title} description={t.chat.subtitle}>
+      <Tabs defaultValue="solo">
           <TabsList>
             <TabsTrigger value="solo">{t.chat.solo}</TabsTrigger>
             <TabsTrigger value="compare">{t.chat.compare}</TabsTrigger>
           </TabsList>
           <TabsContent value="solo">
             {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin text-orange" />
+              <Loader2 className="h-4 w-4 animate-spin text-rose-brand" />
             ) : (
               <SoloChat models={models} />
             )}
           </TabsContent>
           <TabsContent value="compare">
             {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin text-orange" />
+              <Loader2 className="h-4 w-4 animate-spin text-rose-brand" />
             ) : (
               <Compare models={models} />
             )}
           </TabsContent>
         </Tabs>
-      </PageBody>
-    </>
+    </PageShell>
   )
 }
 
@@ -183,7 +180,7 @@ function SoloChat({
           ))}
           {busy && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin text-orange" /> {t.chat.thinking}
+              <Loader2 className="h-3 w-3 animate-spin text-rose-brand" /> {t.chat.thinking}
             </div>
           )}
           {error && <p className="text-sm text-destructive">{error}</p>}

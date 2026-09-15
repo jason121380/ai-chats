@@ -5,39 +5,40 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 /**
- * Pill button, ported from the LURE Meta Platform `.btn` family:
- * 36px tall (30px `sm`), full-round radius, orange CTA, ghost secondary,
- * soft-red danger. Variant NAMES stay shadcn's so existing call sites
- * don't move; only the looks changed.
+ * Buttons per designer_web's STYLE.md:
+ *
+ *   主按鈕  bg-rose-brand text-white px-5 py-2.5 text-sm font-semibold
+ *   次按鈕  border-gray-200 bg-white text-gray-600
+ *   刪除    text-red-500
+ *
+ * rounded-lg like everything else, and no shadow — that repo removed them
+ * site-wide. Variant NAMES stay shadcn's so existing call sites don't move.
  */
 const buttonVariants = cva(
   [
-    "inline-flex items-center justify-center gap-1.5 whitespace-nowrap font-semibold leading-none",
-    "rounded-pill border-[1.5px] transition-colors duration-150",
-    "cursor-pointer disabled:pointer-events-none disabled:opacity-50",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange/40",
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg",
+    "text-sm transition-colors disabled:pointer-events-none disabled:opacity-50",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-light",
     "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   ],
   {
     variants: {
       variant: {
-        default:
-          "border-orange bg-orange text-white hover:border-orange-dark hover:bg-orange-dark",
-        destructive:
-          "border-transparent bg-red-bg text-red hover:bg-[#FFCDD2]",
-        outline:
-          "border-border bg-transparent text-ink hover:border-orange-border hover:bg-orange-bg hover:text-orange",
+        default: "bg-rose-brand font-semibold text-white hover:bg-rose-dark",
         secondary:
-          "border-orange-border bg-orange-bg text-orange hover:bg-orange hover:text-white",
-        ghost:
-          "border-transparent bg-transparent text-gray-500 hover:bg-orange-bg hover:text-orange",
-        link: "border-transparent text-orange underline-offset-4 hover:underline",
+          "border border-gray-200 bg-white font-medium text-gray-600 hover:border-rose-brand hover:text-rose-brand",
+        outline:
+          "border border-gray-200 bg-white font-medium text-gray-600 hover:border-rose-brand hover:text-rose-brand",
+        destructive:
+          "border border-gray-200 bg-white font-medium text-red-500 hover:border-red-300 hover:bg-red-50",
+        ghost: "font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900",
+        link: "font-medium text-rose-brand underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-9 px-[18px] text-[13px]",
-        sm: "h-[30px] px-3.5 text-xs",
-        lg: "h-10 px-6 text-sm",
-        icon: "h-9 w-9 px-0",
+        default: "px-5 py-2.5",
+        sm: "px-3 py-2 text-xs font-medium",
+        lg: "px-6 py-3",
+        icon: "h-10 w-10 p-0",
       },
     },
     defaultVariants: {

@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { formatLatency, formatTokens, formatUsd } from "@/lib/utils"
-import { PageBody, Topbar } from "@/components/layout/topbar"
+import { PageShell } from "@/components/layout/page-shell"
 import { t } from "@/lib/i18n"
 import {
   PROVIDER_LABELS,
@@ -79,11 +79,10 @@ export default function UsagePage() {
   }, [load])
 
   return (
-    <>
-      <Topbar
-        title={t.usage.title}
-        subtitle={t.usage.subtitle}
-        actions={(
+    <PageShell
+      title={t.usage.title}
+      description={t.usage.subtitle}
+      actions={(
           [
             ["today", t.usage.today],
             ["7d", t.usage.days7],
@@ -99,12 +98,11 @@ export default function UsagePage() {
           >
             {label}
           </Button>
-        ))}
-      />
-      <PageBody>
-        {/* The custom window lives here, not in the topbar: two date
-            fields would not survive that 60px band on a phone. */}
-        {range === "custom" && (
+      ))}
+    >
+      {/* The custom window sits in the body, not beside the title: two
+          date fields do not survive that row on a phone. */}
+      {range === "custom" && (
           <div className="flex flex-wrap items-center gap-2">
             <Input
               type="date"
@@ -112,7 +110,7 @@ export default function UsagePage() {
               value={customFrom}
               onChange={(e) => setCustomFrom(e.target.value)}
             />
-            <span className="text-[13px] text-gray-500">{t.usage.to}</span>
+            <span className="text-sm text-gray-500">{t.usage.to}</span>
             <Input
               type="date"
               className="w-40"
@@ -122,8 +120,8 @@ export default function UsagePage() {
           </div>
         )}
 
-      {error && <p className="text-[13px] text-red">{error}</p>}
-      {loading && <Loader2 className="h-5 w-5 animate-spin text-orange" />}
+      {error && <p className="text-sm text-red-500">{error}</p>}
+      {loading && <Loader2 className="h-5 w-5 animate-spin text-rose-brand" />}
 
       {summary && !loading && (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
@@ -146,7 +144,7 @@ export default function UsagePage() {
       )}
 
       {rows && !loading && (
-        <div className="overflow-hidden rounded-[16px] border border-border bg-white">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
           <Table>
             <TableHeader>
               <TableRow>
@@ -217,16 +215,17 @@ export default function UsagePage() {
           </Table>
         </div>
       )}
-      </PageBody>
-    </>
+    </PageShell>
   )
 }
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="kpi-card">
-      <div className="kpi-label">{label}</div>
-      <div className="kpi-value text-[22px]">{value}</div>
+    <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <div className="text-xs font-medium text-gray-500">{label}</div>
+      <div className="mt-1 text-xl font-semibold tabular-nums text-gray-900">
+        {value}
+      </div>
     </div>
   )
 }

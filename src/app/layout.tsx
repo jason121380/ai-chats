@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 
-import { MobileNavProvider } from "@/components/layout/mobile-nav"
+import { ShellMain } from "@/components/layout/admin-shell"
+import { AdminShellProvider } from "@/components/layout/shell-context"
 import { Sidebar } from "@/components/layout/sidebar"
 import "./globals.css"
 
@@ -19,9 +20,10 @@ export default function RootLayout({
     <html lang="zh-Hant-TW">
       <head>
         {/*
-          Noto Sans TC from the Google Fonts CDN — the same delivery
-          luredash uses. Deliberately NOT next/font: that fetches at
-          build time, which turns a network hiccup into a failed build.
+          Noto Sans TC from the Google Fonts CDN — the same face designer_web
+          loads through next/font. Deliberately NOT next/font here: that
+          fetches at build time, which turns a network hiccup into a failed
+          build.
         */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -38,13 +40,13 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-sans antialiased">
-        <MobileNavProvider>
-          <div className="flex min-h-screen bg-background">
+      <body className="antialiased">
+        <AdminShellProvider>
+          <div className="min-h-screen bg-background">
             <Sidebar />
-            <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
+            <ShellMain>{children}</ShellMain>
           </div>
-        </MobileNavProvider>
+        </AdminShellProvider>
       </body>
     </html>
   )

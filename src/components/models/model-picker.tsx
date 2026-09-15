@@ -28,7 +28,7 @@ export function MultiModelPicker({
   const usable = models.filter((m) => m.enabled)
   if (usable.length === 0) {
     return (
-      <p className="text-[13px] text-gray-500">{t.errors.noEnabledModels}</p>
+      <p className="text-sm text-gray-500">{t.errors.noEnabledModels}</p>
     )
   }
   return (
@@ -42,10 +42,10 @@ export function MultiModelPicker({
             type="button"
             onClick={() => onToggle(key)}
             className={cn(
-              "flex items-center justify-between rounded-lg border px-3 py-2 text-left text-[13px] transition-colors",
+              "flex items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-colors",
               isSelected
-                ? "border-orange bg-orange-bg"
-                : "border-border bg-white hover:border-orange-border hover:bg-orange-bg",
+                ? "border-rose-brand bg-rose-light/40"
+                : "border-gray-200 bg-white hover:border-rose-brand",
               !m.providerConfigured && "opacity-60"
             )}
           >
@@ -53,12 +53,12 @@ export function MultiModelPicker({
               <span
                 className={cn(
                   "truncate font-semibold",
-                  isSelected ? "text-orange" : "text-ink"
+                  isSelected ? "text-rose-dark" : "text-gray-900"
                 )}
               >
                 {m.displayName}
               </span>
-              <span className="truncate text-[11px] text-gray-500">
+              <span className="truncate text-xs text-gray-500">
                 {PROVIDER_LABELS[m.provider] ?? m.provider} ·{" "}
                 {ROLE_LABELS[m.defaultRole] ?? m.defaultRole}
                 {!m.providerConfigured && ` · ${t.errors.noApiKey}`}
@@ -68,8 +68,8 @@ export function MultiModelPicker({
               className={cn(
                 "ml-2 flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border-2 text-[10px] leading-none",
                 isSelected
-                  ? "border-orange bg-orange text-white"
-                  : "border-border bg-white"
+                  ? "border-rose-brand bg-rose-brand text-white"
+                  : "border-gray-200 bg-white"
               )}
             >
               {isSelected ? "✓" : ""}

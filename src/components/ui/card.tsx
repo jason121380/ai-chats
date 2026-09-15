@@ -3,10 +3,9 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 /**
- * Card — flat white panel with a 1px hairline border and a 16px radius,
- * matching the LURE Meta Platform `.ai-chart-card` / `.stat` cards.
- * Deliberately shadow-less: the border carries the separation, and a
- * drop shadow under every card makes a dense page look noisy.
+ * Panel surface: white, gray-200 hairline, rounded-lg, and NO shadow —
+ * designer_web removed shadows site-wide. Do not nest cards inside cards;
+ * that repo's STYLE.md forbids it and the borders stack up visibly.
  */
 const Card = React.forwardRef<
   HTMLDivElement,
@@ -15,7 +14,7 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-[16px] border border-border bg-card text-card-foreground",
+      "rounded-lg border border-gray-200 bg-white text-card-foreground",
       className
     )}
     {...props}
@@ -35,27 +34,25 @@ const CardHeader = React.forwardRef<
 ))
 CardHeader.displayName = "CardHeader"
 
+/** 區塊標題 text-base font-semibold text-gray-900 */
 const CardTitle = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-[14px] font-bold leading-snug text-ink", className)}
+    className={cn("text-base font-semibold text-gray-900", className)}
     {...props}
   />
 ))
 CardTitle.displayName = "CardTitle"
 
+/** 說明 text-sm text-gray-400 */
 const CardDescription = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("text-[12px] text-gray-500", className)}
-    {...props}
-  />
+  <div ref={ref} className={cn("text-sm text-gray-400", className)} {...props} />
 ))
 CardDescription.displayName = "CardDescription"
 
@@ -71,11 +68,7 @@ const CardFooter = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("flex items-center p-5 pt-0", className)}
-    {...props}
-  />
+  <div ref={ref} className={cn("flex items-center p-5 pt-0", className)} {...props} />
 ))
 CardFooter.displayName = "CardFooter"
 

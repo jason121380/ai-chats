@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { Loader2 } from "lucide-react"
 
-import { PageBody, Topbar } from "@/components/layout/topbar"
+import { PageShell } from "@/components/layout/page-shell"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -32,10 +32,8 @@ import {
 
 export default function SettingsPage() {
   return (
-    <>
-      <Topbar title={t.settings.title} subtitle={t.settings.subtitle} />
-      <PageBody>
-        <Tabs defaultValue="models">
+    <PageShell title={t.settings.title} description={t.settings.subtitle}>
+      <Tabs defaultValue="models">
           <TabsList>
             <TabsTrigger value="models">{t.settings.tabModels}</TabsTrigger>
             <TabsTrigger value="pricing">{t.settings.tabPricing}</TabsTrigger>
@@ -47,8 +45,7 @@ export default function SettingsPage() {
             <PricingTab />
           </TabsContent>
         </Tabs>
-      </PageBody>
-    </>
+    </PageShell>
   )
 }
 
@@ -86,10 +83,10 @@ function ModelsTab() {
   }
 
   if (error) return <p className="text-sm text-destructive">{error}</p>
-  if (!models) return <Loader2 className="h-5 w-5 animate-spin text-orange" />
+  if (!models) return <Loader2 className="h-5 w-5 animate-spin text-rose-brand" />
 
   return (
-    <div className="overflow-hidden rounded-[16px] border border-border bg-white">
+    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
       <Table>
         <TableHeader>
           <TableRow>
@@ -188,10 +185,10 @@ function PricingTab() {
   }, [])
 
   if (error) return <p className="text-sm text-destructive">{error}</p>
-  if (!rows) return <Loader2 className="h-5 w-5 animate-spin text-orange" />
+  if (!rows) return <Loader2 className="h-5 w-5 animate-spin text-rose-brand" />
 
   return (
-    <div className="overflow-hidden rounded-[16px] border border-border bg-white">
+    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
       <Table>
         <TableHeader>
           <TableRow>
