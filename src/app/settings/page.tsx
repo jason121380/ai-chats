@@ -1,9 +1,11 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { Loader2 } from "lucide-react"
+import { Loader2, Plus } from "lucide-react"
 
 import { PageShell } from "@/components/layout/page-shell"
+import { AddModelDialog } from "@/components/models/add-model-dialog"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -52,6 +54,7 @@ export default function SettingsPage() {
 function ModelsTab() {
   const [models, setModels] = useState<ModelConfigDto[] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [adding, setAdding] = useState(false)
 
   const load = useCallback(() => {
     fetch("/api/models")
@@ -82,11 +85,26 @@ function ModelsTab() {
     if (res.ok) load()
   }
 
-  if (error) return <p className="text-sm text-destructive">{error}</p>
+  if (error) return <p className="text-sm text-red-500">{error}</p>
   if (!models) return <Loader2 className="h-5 w-5 animate-spin text-rose-brand" />
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button onClick={() => setAdding(true)}>
+          <Plus size={15} />
+          {t.settings.addModel}
+        </Button>
+      </div>
+      <AddModelDialog
+        open={adding}
+        onClose={() => setAdding(false)}
+        onAdded={load}
+        existingKeys={
+          new Set(models.map((m) => `${m.provider}/${m.modelId}`))
+        }
+      />
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
       <Table>
         <TableHeader>
           <TableRow>
@@ -165,6 +183,7 @@ function ModelsTab() {
           ))}
         </TableBody>
       </Table>
+      </div>
     </div>
   )
 }
@@ -184,7 +203,7 @@ function PricingTab() {
       )
   }, [])
 
-  if (error) return <p className="text-sm text-destructive">{error}</p>
+  if (error) return <p className="text-sm text-red-500">{error}</p>
   if (!rows) return <Loader2 className="h-5 w-5 animate-spin text-rose-brand" />
 
   return (

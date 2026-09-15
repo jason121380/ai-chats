@@ -157,6 +157,18 @@ export const t = {
   },
 
   settings: {
+    addModel: "新增模型",
+    addModelHint: "從各家近期的模型挑一個，或直接填入模型 ID。",
+    recentModels: "近期模型",
+    alreadyAdded: "已在清單",
+    modelIdLabel: "模型 ID",
+    modelIdPlaceholder: "例如 gpt-5.6-luna",
+    modelIdHint:
+      "送給供應商的字串就是這個。清單沒有的新模型可以直接填，不必等更新。",
+    displayNameLabel: "顯示名稱",
+    addErrorNoId: "請選一個模型或填入模型 ID",
+    adding: "新增中…",
+    cancel: "取消",
     title: "設定",
     subtitle:
       "模型設定與價格。價格採唯讀累加，歷史 ModelRun 的價格快照永不被改寫。",
@@ -174,7 +186,7 @@ export const t = {
     pricingMissing: "未設定",
     apiKeyPresent: "已提供",
     apiKeyMissing: "缺少",
-    noModels: "尚未設定任何模型，請執行 npm run db:seed。",
+    noModels: "尚未設定任何模型。點右上角「新增模型」加入。",
     colInputPer: "輸入 / 1M",
     colOutputPer: "輸出 / 1M",
     colCachedPer: "快取 / 1M",
