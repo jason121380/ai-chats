@@ -14,11 +14,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { formatTokens, formatUsd } from "@/lib/utils"
+import { formatTokens } from "@/lib/utils"
+import { useMoney } from "@/components/layout/currency-context"
 import { formatDateTime, modeLabel, t } from "@/lib/i18n"
 import type { SessionDto } from "@/types/api"
 
 export default function HistoryPage() {
+  const money = useMoney()
   const [sessions, setSessions] = useState<SessionDto[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -76,7 +78,7 @@ export default function HistoryPage() {
                     {formatTokens(s.totalTokens ?? 0)}
                   </TableCell>
                   <TableCell className="text-right">
-                    {formatUsd(s.totalCostUsd)}
+                    {money.format(s.totalCostUsd)}
                   </TableCell>
                   <TableCell className="text-right text-xs text-muted-foreground">
                     {formatDateTime(s.updatedAt)}

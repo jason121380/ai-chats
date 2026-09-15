@@ -13,7 +13,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { formatLatency, formatTokens, formatUsd } from "@/lib/utils"
+import { formatLatency, formatTokens } from "@/lib/utils"
+import { ConvertedNote } from "@/components/layout/converted-note"
+import { useMoney } from "@/components/layout/currency-context"
 import { PageShell } from "@/components/layout/page-shell"
 import { t } from "@/lib/i18n"
 import {
@@ -42,6 +44,7 @@ function rangeToDates(key: RangeKey, customFrom: string, customTo: string) {
 }
 
 export default function UsagePage() {
+  const money = useMoney()
   const [range, setRange] = useState<RangeKey>("30d")
   const [customFrom, setCustomFrom] = useState("")
   const [customTo, setCustomTo] = useState("")
@@ -125,7 +128,7 @@ export default function UsagePage() {
 
       {summary && !loading && (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-          <StatCard label={t.usage.totalSpend} value={formatUsd(summary.totalCostUsd)} />
+          <StatCard label={t.usage.totalSpend} value={money.format(summary.totalCostUsd)} />
           <StatCard
             label={t.usage.totalTokens}
             value={formatTokens(summary.totalTokens)}
@@ -142,6 +145,8 @@ export default function UsagePage() {
           />
         </div>
       )}
+      <ConvertedNote />
+
 
       {rows && !loading && (
         <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
@@ -196,10 +201,10 @@ export default function UsagePage() {
                     {formatTokens(r.totalTokens)}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatUsd(r.totalCostUsd)}
+                    {money.format(r.totalCostUsd)}
                   </TableCell>
                   <TableCell className="text-right">
-                    {formatUsd(r.averageCostPerCallUsd)}
+                    {money.format(r.averageCostPerCallUsd)}
                   </TableCell>
                   <TableCell className="text-right">
                     {formatLatency(r.averageLatencyMs)}

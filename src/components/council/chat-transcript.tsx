@@ -4,7 +4,8 @@ import { useMemo } from "react"
 import { Gavel } from "lucide-react"
 
 import { Markdown } from "@/components/ui/markdown"
-import { formatLatency, formatTokens, formatUsd } from "@/lib/utils"
+import { formatLatency, formatTokens } from "@/lib/utils"
+import { useMoney } from "@/components/layout/currency-context"
 import { t } from "@/lib/i18n"
 import type { CouncilRunDto, ModelConfigDto, ModelRunDto } from "@/types/api"
 import {
@@ -41,6 +42,7 @@ export function ChatTranscript({
    *  behind a 會議總結 button so the live meeting stays a chat. */
   showSummary?: boolean
 }) {
+  const money = useMoney()
   const nameFor = useMemo(() => {
     const byKey = new Map(
       models.map((m) => [`${m.provider}/${m.modelId}`, m.displayName])
@@ -110,7 +112,7 @@ export function ChatTranscript({
               {chairmanRun && (
                 <span className="ml-auto text-xs text-muted-foreground">
                   {formatTokens(chairmanRun.totalTokens)} Token ·{" "}
-                  {formatUsd(chairmanRun.totalCostUsd)} ·{" "}
+                  {money.format(chairmanRun.totalCostUsd)} ·{" "}
                   {formatLatency(chairmanRun.latencyMs)}
                 </span>
               )}

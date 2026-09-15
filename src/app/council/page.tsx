@@ -23,7 +23,8 @@ import {
   modelKey,
 } from "@/components/models/model-picker"
 import { useModels } from "@/components/models/use-models"
-import { cn, formatLatency, formatTokens, formatUsd } from "@/lib/utils"
+import { cn, formatLatency, formatTokens } from "@/lib/utils"
+import { useMoney } from "@/components/layout/currency-context"
 import { stageLabel, t } from "@/lib/i18n"
 import type { CouncilRunDto } from "@/types/api"
 
@@ -38,6 +39,7 @@ function parseKey(key: string) {
 
 export default function CouncilPage() {
   const { models, loading } = useModels()
+  const money = useMoney()
   const [mode, setMode] = useState<Mode>("COUNCIL")
   const [question, setQuestion] = useState("")
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -407,7 +409,7 @@ export default function CouncilPage() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Stat label={t.stats.messages} value={String(run.modelRuns.length)} />
                 <Stat label={t.stats.tokens} value={formatTokens(run.totalTokens)} />
-                <Stat label={t.stats.cost} value={formatUsd(run.totalCostUsd)} />
+                <Stat label={t.stats.cost} value={money.format(run.totalCostUsd)} />
                 <Stat
                   label={t.stats.wallTime}
                   value={

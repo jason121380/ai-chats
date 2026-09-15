@@ -19,7 +19,8 @@ import { PageShell } from "@/components/layout/page-shell"
 import { ModelRunCard } from "@/components/council/model-run-card"
 import { MultiModelPicker, modelKey } from "@/components/models/model-picker"
 import { useModels } from "@/components/models/use-models"
-import { formatLatency, formatTokens, formatUsd } from "@/lib/utils"
+import { formatLatency, formatTokens } from "@/lib/utils"
+import { useMoney } from "@/components/layout/currency-context"
 import { t } from "@/lib/i18n"
 import { PROVIDER_LABELS, type ModelRunDto } from "@/types/api"
 
@@ -68,6 +69,7 @@ function SoloChat({
 }: {
   models: ReturnType<typeof useModels>["models"]
 }) {
+  const money = useMoney()
   const usable = models.filter((m) => m.enabled)
   const [model, setModel] = useState<string | null>(
     usable.length > 0 ? modelKey(usable[0]) : null
@@ -105,7 +107,7 @@ function SoloChat({
           {
             role: "assistant",
             content: data.message.content,
-            meta: `${mr.modelId} · ${formatTokens(mr.totalTokens)} Token · ${formatUsd(
+            meta: `${mr.modelId} · ${formatTokens(mr.totalTokens)} Token · ${money.format(
               mr.totalCostUsd
             )} · ${formatLatency(mr.latencyMs)}`,
           },

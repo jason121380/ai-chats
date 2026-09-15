@@ -192,6 +192,24 @@ export const t = {
         : `已補上 ${filled} 筆花費紀錄。`,
     backfillNone: "沒有需要回填的紀錄。",
     estimated: "事後估算",
+    currency: "顯示幣別",
+    currencyHint:
+      "帳本本身一律是美金（供應商就是這樣計價的），這裡只改畫面上怎麼顯示。填入匯率後，所有花費都會換算成台幣；留空則直接顯示美金。換算只影響顯示，不會改動任何已記錄的金額。",
+    rateLabel: "1 美元 =",
+    rateUnit: "台幣",
+    ratePlaceholder: "例如 31.5",
+    rateSave: "儲存匯率",
+    rateSaving: "儲存中…",
+    rateClear: "改回顯示美金",
+    rateUnset: "尚未設定匯率，目前以美金顯示。",
+    rateSetAt: (when: string) => `匯率設定於 ${when}`,
+    rateStale: (days: number) =>
+      `這個匯率已經 ${days} 天沒更新了，請確認是否仍適用。`,
+    rateInvalid: "請填入有效的匯率數字。",
+    rateSourceNote:
+      "匯率請自行查詢後填入（例如台銀牌告匯率）。系統不會自動更新，也不會替你猜一個數字。",
+    convertedNote: (rate: string, when: string) =>
+      `金額以 1 美元 = ${rate} 台幣換算顯示（${when} 設定）；帳本原始金額為美金。`,
     addModelHint: "從各家近期的模型挑一個，或直接填入模型 ID。",
     recentModels: "近期模型",
     alreadyAdded: "已在清單",

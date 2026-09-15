@@ -24,11 +24,50 @@ export function formatUsd(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return "—"
   const n = typeof value === "string" ? Number(value) : value
   if (!Number.isFinite(n)) return "—"
-  if (n === 0) return `${CURRENCY_PREFIX}0`
+  return `${CURRENCY_PREFIX}${scaled(n)}`
+}
+
+export const TWD_PREFIX = "NT$"
+
+/**
+ * The same amount in New Taiwan dollars.
+ *
+ * `rate` is NT dollars per 1 US dollar, and when it is null this falls back
+ * to US$ rather than guessing one. That fallback is not a degraded mode: US$
+ * is the currency the amount is actually stored and billed in, so showing it
+ * is the correct answer to "we do not know today's rate", and a plausible
+ * NT$ figure derived from a made-up rate would be the wrong one.
+ *
+ * Conversion never touches stored data. Every cost column stays US$ forever;
+ * changing the rate changes the display and nothing else, which is why a
+ * wrong rate is recoverable and a converted ledger would not be.
+ */
+export function formatTwd(
+  value: string | number | null | undefined,
+  rate: string | number | null | undefined
+): string {
+  if (value === null || value === undefined) return "—"
+  const n = typeof value === "string" ? Number(value) : value
+  if (!Number.isFinite(n)) return "—"
+  const r = typeof rate === "string" ? Number(rate) : rate
+  if (r === null || r === undefined || !Number.isFinite(r) || r <= 0) {
+    return `${CURRENCY_PREFIX}${scaled(n)}`
+  }
+  return `${TWD_PREFIX}${scaled(n * r)}`
+}
+
+/**
+ * Precision that adapts to magnitude, so a single cheap call does not round
+ * away to zero and read as free. A per-turn cost can be four decimal places
+ * into a New Taiwan dollar; showing it to two would report most of this
+ * app's amounts as NT$0.00.
+ */
+function scaled(n: number): string {
+  if (n === 0) return "0"
   const abs = Math.abs(n)
-  if (abs >= 1) return `${CURRENCY_PREFIX}${n.toFixed(2)}`
-  if (abs >= 0.01) return `${CURRENCY_PREFIX}${n.toFixed(4)}`
-  return `${CURRENCY_PREFIX}${n.toFixed(6)}`
+  if (abs >= 1) return n.toFixed(2)
+  if (abs >= 0.01) return n.toFixed(4)
+  return n.toFixed(6)
 }
 
 export function formatTokens(value: number | null | undefined): string {

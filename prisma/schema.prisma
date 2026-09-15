@@ -336,6 +336,15 @@ model ModelConfig {
   @@unique([provider, modelId])
 }
 
+/// Small mutable key/value settings that are display preferences, not ledger
+/// facts. The billing ledger is US dollars and stays that way; anything in
+/// here only changes how it is shown.
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
 model ModelPricing {
   id       String       @id @default(uuid()) @db.Uuid
   provider ProviderName

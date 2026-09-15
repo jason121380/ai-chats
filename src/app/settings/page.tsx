@@ -6,6 +6,7 @@ import { Loader2, Plus, Trash2 } from "lucide-react"
 import { PageShell } from "@/components/layout/page-shell"
 import { AddModelDialog } from "@/components/models/add-model-dialog"
 import { ApplyPricesDialog } from "@/components/models/apply-prices-dialog"
+import { CurrencySetting } from "@/components/models/currency-setting"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
@@ -289,6 +290,7 @@ function PricingTab() {
 
   return (
     <div className="space-y-4">
+      <CurrencySetting />
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={backfill} disabled={backfilling}>
           {backfilling ? t.settings.backfilling : t.settings.backfill}

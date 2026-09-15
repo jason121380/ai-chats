@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Markdown } from "@/components/ui/markdown"
 import { StatusBadge } from "@/components/models/model-picker"
-import { formatLatency, formatTokens, formatUsd } from "@/lib/utils"
+import { formatLatency, formatTokens } from "@/lib/utils"
+import { useMoney } from "@/components/layout/currency-context"
 import { t } from "@/lib/i18n"
 import { PROVIDER_LABELS, ROLE_LABELS, type ModelRunDto } from "@/types/api"
 
@@ -20,6 +21,7 @@ export function ModelRunCard({
   pending?: { provider: string; modelId: string }
   label?: string
 }) {
+  const money = useMoney()
   const [open, setOpen] = useState(false)
 
   const provider = run?.provider ?? pending?.provider ?? ""
@@ -67,7 +69,7 @@ export function ModelRunCard({
                 <div className="font-medium text-foreground">
                   {run.pricingStatus === "MISSING" && run.totalCostUsd === null
                     ? t.stats.noPrice
-                    : formatUsd(run.totalCostUsd)}
+                    : money.format(run.totalCostUsd)}
                 </div>
                 <div>
                   {t.stats.cost}

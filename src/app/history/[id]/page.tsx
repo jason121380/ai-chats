@@ -12,9 +12,11 @@ import { ModelRunCard } from "@/components/council/model-run-card"
 import { ChatTranscript } from "@/components/council/chat-transcript"
 import { DiscussionComposer } from "@/components/council/discussion-composer"
 import { DetailModal } from "@/components/council/detail-modal"
+import { ConvertedNote } from "@/components/layout/converted-note"
 import { StatusBadge } from "@/components/models/model-picker"
 import { useModels } from "@/components/models/use-models"
-import { formatTokens, formatUsd } from "@/lib/utils"
+import { formatTokens } from "@/lib/utils"
+import { useMoney } from "@/components/layout/currency-context"
 import {
   formatDateTime,
   kindLabel,
@@ -31,6 +33,7 @@ const TERMINAL = ["COMPLETED", "PARTIAL", "FAILED", "CANCELLED"]
 export default function SessionDetailPage() {
   const params = useParams<{ id: string }>()
   const { models } = useModels()
+  const money = useMoney()
   const [session, setSession] = useState<SessionDetailDto | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [summaryOpen, setSummaryOpen] = useState(false)
@@ -175,7 +178,7 @@ export default function SessionDetailPage() {
               <Badge variant="outline">{kindLabel(run.kind)}</Badge>
               <span className="ml-auto text-xs text-muted-foreground">
                 {formatTokens(run.totalTokens)} Token ·{" "}
-                {formatUsd(run.totalCostUsd)}
+                {money.format(run.totalCostUsd)}
               </span>
             </div>
 
@@ -271,11 +274,14 @@ export default function SessionDetailPage() {
         icon={<Coins className="h-4 w-4 text-rose-brand" />}
       >
         {headline && (
-          <CostBreakdown
-            runs={headline.modelRuns}
-            total={headline.totalCostUsd}
-            kind={headline.kind}
-          />
+          <>
+            <CostBreakdown
+              runs={headline.modelRuns}
+              total={headline.totalCostUsd}
+              kind={headline.kind}
+            />
+            <ConvertedNote className="mt-3 text-xs text-gray-400" />
+          </>
         )}
       </DetailModal>
     </PageShell>
@@ -319,6 +325,7 @@ function CostBreakdown({
   total: string | null
   kind: string
 }) {
+  const money = useMoney()
   const stageOrder = ["ROUND_1", "CRITIQUE", "DISCUSSION", "CHAIRMAN"]
   const sorted = [...runs].sort(
     (a, b) =>
@@ -350,7 +357,7 @@ function CostBreakdown({
               )}
             </span>
             <span className="shrink-0 tabular-nums">
-              {formatUsd(r.totalCostUsd)}
+              {money.format(r.totalCostUsd)}
             </span>
           </div>
         ))}
@@ -358,7 +365,7 @@ function CostBreakdown({
       <Separator className="my-2" />
       <div className="flex items-center justify-between font-semibold">
         <span>{t.history.total}</span>
-        <span className="tabular-nums">{formatUsd(total)}</span>
+        <span className="tabular-nums">{money.format(total)}</span>
       </div>
     </div>
   )

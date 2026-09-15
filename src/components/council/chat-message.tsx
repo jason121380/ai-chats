@@ -3,7 +3,8 @@
 import { AlertTriangle } from "lucide-react"
 
 import { Markdown } from "@/components/ui/markdown"
-import { cn, formatLatency, formatTokens, formatUsd } from "@/lib/utils"
+import { cn, formatLatency, formatTokens } from "@/lib/utils"
+import { useMoney } from "@/components/layout/currency-context"
 import { formatTime, t } from "@/lib/i18n"
 import { ROLE_LABELS, type ModelRunDto } from "@/types/api"
 import { PROVIDER_MARKS, ProviderMarkIcon } from "./provider-marks"
@@ -77,6 +78,7 @@ export function ChatMessage({
   displayName: string
   highlight?: boolean
 }) {
+  const money = useMoney()
   const style = speakerStyle(run.provider)
   const failed = run.status === "FAILED" || run.status === "TIMEOUT"
   // A row exists from the moment the turn starts, with no response yet. Without
@@ -168,7 +170,7 @@ export function ChatMessage({
             >
               {run.pricingStatus === "MISSING" && run.totalCostUsd === null
                 ? t.stats.noPrice
-                : formatUsd(run.totalCostUsd)}
+                : money.format(run.totalCostUsd)}
               {run.pricingStatus === "ESTIMATED" && (
                 <span className="ml-1 text-amber-600">
                   ({t.settings.estimated})

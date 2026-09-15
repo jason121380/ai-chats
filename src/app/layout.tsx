@@ -1,8 +1,11 @@
 import type { Metadata } from "next"
 
 import { ShellMain } from "@/components/layout/admin-shell"
+import { CurrencyProvider } from "@/components/layout/currency-context"
 import { AdminShellProvider } from "@/components/layout/shell-context"
 import { Sidebar } from "@/components/layout/sidebar"
+import { prisma } from "@/server/db/prisma"
+import { getCurrencySetting, NO_RATE } from "@/server/usage/currency"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -11,11 +14,17 @@ export const metadata: Metadata = {
     "一個問題，多個 AI 模型獨立分析、匿名互評，最後由主席整合出決策。",
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Read here rather than in the browser so amounts are rendered in the right
+  // currency the first time. A page that has no database (a broken
+  // connection, a first boot) still renders — it just shows US$, which is
+  // what the ledger holds anyway.
+  const currency = await getCurrencySetting(prisma).catch(() => NO_RATE)
+
   return (
     <html lang="zh-Hant-TW">
       <head>
@@ -41,12 +50,14 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <AdminShellProvider>
-          <div className="min-h-screen bg-background">
-            <Sidebar />
-            <ShellMain>{children}</ShellMain>
-          </div>
-        </AdminShellProvider>
+        <CurrencyProvider value={currency}>
+          <AdminShellProvider>
+            <div className="min-h-screen bg-background">
+              <Sidebar />
+              <ShellMain>{children}</ShellMain>
+            </div>
+          </AdminShellProvider>
+        </CurrencyProvider>
       </body>
     </html>
   )
