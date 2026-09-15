@@ -52,10 +52,12 @@ COPY --from=build /app/.next ./.next
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/next.config.mjs ./next.config.mjs
 COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/docker-start.sh ./docker-start.sh
 
 EXPOSE 3000
 
 # Migrations run before the server accepts traffic. If one fails the
 # container exits instead of serving against a schema it does not match —
-# a loud failure beats every query 500ing for an unclear reason.
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run start"]
+# a loud failure beats every query 500ing for an unclear reason. Invoked
+# through `sh` so a missing exec bit on the file cannot break the boot.
+CMD ["sh", "./docker-start.sh"]
