@@ -1,6 +1,9 @@
 import type { AIProvider } from "../provider"
-import type { AIRequest, AIResponse, FetchFn } from "../types"
-import { generateOpenAICompatible } from "./openai-compatible"
+import type { AIRequest, AIResponse, AIStreamEvent, FetchFn } from "../types"
+import {
+  generateOpenAICompatible,
+  streamOpenAICompatible,
+} from "./openai-compatible"
 
 export interface XAIProviderOptions {
   apiKey: string
@@ -17,12 +20,20 @@ export class XAIProvider implements AIProvider {
     this.options = options
   }
 
-  async generate(request: AIRequest): Promise<AIResponse> {
-    return generateOpenAICompatible(request, {
+  private opts() {
+    return {
       baseUrl: this.options.baseUrl ?? "https://api.x.ai/v1",
       apiKey: this.options.apiKey,
       fetchFn: this.options.fetchFn,
-      maxTokensParam: "max_tokens",
-    })
+      maxTokensParam: "max_tokens" as const,
+    }
+  }
+
+  async generate(request: AIRequest): Promise<AIResponse> {
+    return generateOpenAICompatible(request, this.opts())
+  }
+
+  stream(request: AIRequest): AsyncIterable<AIStreamEvent> {
+    return streamOpenAICompatible(request, this.opts())
   }
 }

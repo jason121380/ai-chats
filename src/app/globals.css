@@ -131,3 +131,39 @@
     display: none;
   }
 }
+
+/*
+ * A caret on the last line of a message that is still streaming.
+ *
+ * Attached to the final child rather than the container so it follows the
+ * text: on a paragraph it sits after the last word, and a message ending in
+ * a list or a code block still gets the caret at the actual end of the
+ * content instead of floating below it.
+ *
+ * `inline-block` with a zero width keeps it out of the text flow, so the
+ * caret can never reflow the line it is sitting on as the text grows.
+ */
+.streaming > :last-child::after {
+  content: "";
+  display: inline-block;
+  width: 0.45em;
+  height: 1em;
+  margin-left: 0.15em;
+  vertical-align: text-bottom;
+  background-color: hsl(var(--primary));
+  opacity: 0.7;
+  animation: streaming-caret 1s steps(2, start) infinite;
+}
+
+@keyframes streaming-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Someone who asked for less motion gets a steady caret, not a flashing one. */
+@media (prefers-reduced-motion: reduce) {
+  .streaming > :last-child::after {
+    animation: none;
+  }
+}

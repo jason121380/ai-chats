@@ -61,7 +61,11 @@ export default function SessionDetailPage() {
   // Only polls while a run is actually sitting — which, on a history page, is
   // the window between reopening a discussion and it finishing. A finished
   // record does not change, and polling it forever would be a request every
-  // two seconds for a page left open in a tab.
+  // second for a page left open in a tab.
+  //
+  // One second rather than two because a turn's text is written as it
+  // streams: the poll interval IS the frame rate of the text appearing, and
+  // at two seconds a ten-second answer lands in five visible jumps.
   useEffect(() => {
     const id = params?.id
     if (!id || !active) return
@@ -69,7 +73,7 @@ export default function SessionDetailPage() {
       load(id).catch(() => {
         // transient — the next tick tries again
       })
-    }, 2000)
+    }, 1000)
     return () => clearInterval(interval)
   }, [params?.id, active, load])
 

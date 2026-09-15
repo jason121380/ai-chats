@@ -10,7 +10,12 @@ import { calculateCost } from "@/server/usage/calculate-cost"
 import { getActivePricing } from "@/server/usage/pricing"
 import type { PricingSnapshot } from "@/server/usage/types"
 import type { ProviderRegistry } from "./registry"
-import type { AIMessage, AIResponse, ProviderName } from "./types"
+import type {
+  AIMessage,
+  AIResponse,
+  AIStreamEvent,
+  ProviderName,
+} from "./types"
 import { ProviderError } from "./types"
 import { withRetries, type RetryOptions } from "./retry"
 
@@ -150,16 +155,29 @@ export async function executeModelRun(
 
   try {
     const provider = registry.get(spec.provider)
+    const request = {
+      model: spec.modelId,
+      messages: spec.messages,
+      systemPrompt: spec.systemPrompt,
+      temperature,
+      maxOutputTokens,
+      signal: controller.signal,
+    }
     const outcome = await withRetries(
       () =>
-        provider.generate({
-          model: spec.modelId,
-          messages: spec.messages,
-          systemPrompt: spec.systemPrompt,
-          temperature,
-          maxOutputTokens,
-          signal: controller.signal,
-        }),
+        provider.stream
+          ? collectStream(provider.stream(request), (partial) => {
+              // Fire-and-forget: the turn must not be paced by how fast the
+              // database accepts a write, and a lost partial costs nothing —
+              // the next one carries the same text plus more.
+              void db.modelRun
+                .update({
+                  where: { id: run.id },
+                  data: { response: partial },
+                })
+                .catch(() => {})
+            })
+          : provider.generate(request),
       deps.retry
     )
     response = outcome.result
@@ -264,4 +282,63 @@ export async function executeModelRun(
     response,
     latencyMs,
   }
+}
+
+/** How often partial text is written while a turn streams. */
+const PARTIAL_WRITE_INTERVAL_MS = 400
+
+/**
+ * Drain a provider stream into the finished response, reporting the text so
+ * far as it grows.
+ *
+ * The partial is written to the ModelRun row so a reader polling the session
+ * sees the answer appear rather than waiting for the whole thing to land at
+ * once. Two things keep that from corrupting the ledger:
+ *
+ * - The row stays RUNNING throughout, and `response` is only meaningful
+ *   alongside a terminal status. A partial on a RUNNING row reads as "this
+ *   much so far"; the same text on a COMPLETED row would read as the model's
+ *   entire answer, which is why the completion write is the one that sets
+ *   both together.
+ * - Writes are throttled rather than one per token. A turn is hundreds of
+ *   deltas; an UPDATE each would turn one model call into hundreds of round
+ *   trips, and the point of this is to show text sooner, not to spend the
+ *   time saved on database writes.
+ *
+ * On a retry the accumulator starts empty again, so a half-streamed failed
+ * attempt cannot leave its text spliced in front of the successful one.
+ */
+export async function collectStream(
+  stream: AsyncIterable<AIStreamEvent>,
+  onPartial: (text: string) => void,
+  intervalMs: number = PARTIAL_WRITE_INTERVAL_MS,
+  clock: () => number = Date.now
+): Promise<AIResponse> {
+  let text = ""
+  let lastWrite = 0
+  let finished: AIResponse | undefined
+
+  for await (const event of stream) {
+    if (event.type === "delta" && event.delta) {
+      text += event.delta
+      const now = clock()
+      if (now - lastWrite >= intervalMs) {
+        lastWrite = now
+        onPartial(text)
+      }
+    } else if (event.type === "done") {
+      finished = event.response
+    }
+  }
+
+  if (!finished) {
+    throw new ProviderError("Stream ended without a final response", {
+      code: "UNKNOWN",
+      retryable: false,
+    })
+  }
+  // The provider's own content wins over the accumulation: they agree in
+  // every normal case, and where they do not, the one the provider called
+  // final is the answer.
+  return finished.content ? finished : { ...finished, content: text }
 }

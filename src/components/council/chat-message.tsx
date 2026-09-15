@@ -131,8 +131,16 @@ export function ChatMessage({
                   </span>
                 </div>
                 {run.response ? (
-                  <Markdown>{run.response}</Markdown>
+                  // While the turn is still streaming this is the text so
+                  // far, so it gets a caret: the difference between "this is
+                  // the answer" and "this is the answer so far" is the whole
+                  // reason to show it early.
+                  <div className={cn(inFlight && "streaming")}>
+                    <Markdown>{run.response}</Markdown>
+                  </div>
                 ) : inFlight ? (
+                  // Dots only until the first character arrives. After that
+                  // the text itself is the progress indicator.
                   <span className="flex items-center gap-2 text-sm text-muted-foreground">
                     <TypingDots />
                     {t.transcript.typing}
