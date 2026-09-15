@@ -8,6 +8,22 @@ import { prisma } from "@/server/db/prisma"
 import { getCurrencySetting, NO_RATE } from "@/server/usage/currency"
 import "./globals.css"
 
+/**
+ * Rendered per request, never prerendered.
+ *
+ * This layout reads the display currency from the database. Without this
+ * line Next prerenders it at BUILD time — and the build has no database (the
+ * Dockerfile passes a placeholder DATABASE_URL, because `next build` imports
+ * route modules that validate the variable at import). So the read fails,
+ * the "no rate configured" fallback gets baked into the static shell, and
+ * every statically rendered page shows US$ forever no matter what rate is
+ * set afterwards. /usage and /history did exactly that.
+ *
+ * Nothing is lost: every page here fetches its own data in the browser, so
+ * the prerendered HTML was an empty skeleton either way.
+ */
+export const dynamic = "force-dynamic"
+
 export const metadata: Metadata = {
   title: "AI 議會",
   description:
