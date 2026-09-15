@@ -40,6 +40,22 @@ export interface DiscussionTurn {
   content: string
 }
 
+/** How the person who asked appears in the transcript the models read. */
+export const HUMAN_SPEAKER_NAME = "你"
+
+/** Something the person who asked said mid-discussion. No ledger row: it cost
+ *  nothing and is not a billable model call. */
+export interface DiscussionHumanTurn {
+  speakerName: string
+  roundNumber: number
+  turnIndex: number
+  content: string
+  isHuman: true
+}
+
+/** Anything said in a discussion, in speaking order. */
+export type DiscussionEntry = DiscussionTurn | DiscussionHumanTurn
+
 export interface DiscussionConfig {
   runId: string
   sessionId: string
@@ -65,6 +81,7 @@ export type CouncilEventType =
   | "council.failed"
   | "round.started"
   | "round.completed"
+  | "human.said"
 
 export interface CouncilEvent {
   type: CouncilEventType

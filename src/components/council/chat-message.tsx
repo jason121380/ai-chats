@@ -6,6 +6,7 @@ import { Markdown } from "@/components/ui/markdown"
 import { cn, formatLatency, formatTokens, formatUsd } from "@/lib/utils"
 import { formatTime, t } from "@/lib/i18n"
 import { ROLE_LABELS, type ModelRunDto } from "@/types/api"
+import { PROVIDER_MARKS, ProviderMarkIcon } from "./provider-marks"
 import { speakerInitials, speakerStyle } from "./speaker"
 
 function Avatar({
@@ -17,17 +18,36 @@ function Avatar({
   provider: string
   className?: string
 }) {
+  const mark = PROVIDER_MARKS[provider]
   const style = speakerStyle(provider)
+
+  // Initials are the fallback, not the design: a provider we have no mark for
+  // still needs an avatar that tells it apart from the others.
+  if (!mark) {
+    return (
+      <div
+        className={cn(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+          style.avatar,
+          className
+        )}
+        aria-hidden
+      >
+        {speakerInitials(name)}
+      </div>
+    )
+  }
+
   return (
     <div
       className={cn(
-        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-        style.avatar,
+        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white",
         className
       )}
-      aria-hidden
+      style={{ backgroundColor: mark.bg }}
+      title={mark.label}
     >
-      {speakerInitials(name)}
+      <ProviderMarkIcon provider={provider} className="h-[18px] w-[18px]" />
     </div>
   )
 }

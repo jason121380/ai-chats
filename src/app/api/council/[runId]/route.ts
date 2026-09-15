@@ -17,6 +17,10 @@ export async function GET(
       where: { id: params.runId },
       include: {
         userMessage: true,
+        interjections: {
+          orderBy: { createdAt: "asc" },
+          select: { id: true, content: true, createdAt: true },
+        },
         modelRuns: {
           orderBy: [
             { roundNumber: "asc" },

@@ -151,11 +151,19 @@ model Message {
   modelRunId String?   @db.Uuid
   modelRun   ModelRun? @relation(fields: [modelRunId], references: [id], onDelete: SetNull)
 
+  // Set when a person speaks INSIDE a running discussion. The opening question
+  // uses the CouncilUserMessage relation below instead; correlating an
+  // interjection by session would be wrong, because one session can hold
+  // several runs.
+  councilRunId String?     @db.Uuid
+  councilRun   CouncilRun? @relation("CouncilRunMessages", fields: [councilRunId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
 
   councilRunsAsUserMessage CouncilRun[] @relation("CouncilUserMessage")
 
   @@index([sessionId, createdAt])
+  @@index([councilRunId, createdAt])
 }
 
 model CouncilRun {
@@ -164,6 +172,9 @@ model CouncilRun {
   session       Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   userMessageId String  @db.Uuid
   userMessage   Message @relation("CouncilUserMessage", fields: [userMessageId], references: [id], onDelete: Cascade)
+
+  /** Interjections typed by a person while this run was in progress. */
+  interjections Message[] @relation("CouncilRunMessages")
 
   kind         CouncilRunKind   @default(COUNCIL)
   status       CouncilRunStatus @default(PENDING)

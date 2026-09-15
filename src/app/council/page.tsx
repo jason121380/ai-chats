@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Gavel, Loader2, MessagesSquare } from "lucide-react"
+import { FileText, Gavel, Loader2, MessagesSquare, X } from "lucide-react"
 
 import { PageShell } from "@/components/layout/page-shell"
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,8 @@ import {
   ChatTranscript,
   type PendingSpeaker,
 } from "@/components/council/chat-transcript"
+import { DiscussionComposer } from "@/components/council/discussion-composer"
+import { Markdown } from "@/components/ui/markdown"
 import {
   ChairmanPicker,
   MultiModelPicker,
@@ -50,6 +52,7 @@ export default function CouncilPage() {
   const [participants, setParticipants] = useState<PendingSpeaker[]>([])
   const esRef = useRef<EventSource | null>(null)
   const bottomRef = useRef<HTMLDivElement | null>(null)
+  const [summaryOpen, setSummaryOpen] = useState(false)
 
   useEffect(() => {
     if (models.length > 0 && selected.size === 0) {
@@ -190,6 +193,19 @@ export default function CouncilPage() {
           ? t.council.discussionSubtitle
           : t.council.subtitle
       }
+      actions={
+        run ? (
+          <Button
+            variant="outline"
+            onClick={() => setSummaryOpen(true)}
+            disabled={!run.finalAnswer}
+            title={run.finalAnswer ? undefined : t.discussion.summaryPending}
+          >
+            <FileText size={15} />
+            {t.discussion.summary}
+          </Button>
+        ) : undefined
+      }
     >
       <ModeSwitch mode={mode} onChange={setMode} disabled={active} />
 
@@ -325,12 +341,30 @@ export default function CouncilPage() {
             )}
           </div>
 
-          <ChatTranscript
-            run={run}
-            question={askedQuestion}
-            models={models}
-            pendingSpeakers={participants}
-          />
+          {/* A chat window, not a page section: the transcript owns its own
+              scroll so the composer stays reachable while a long meeting
+              runs, instead of being pushed below the fold. */}
+          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+            <div className="max-h-[min(70vh,640px)] space-y-5 overflow-y-auto p-4">
+              <ChatTranscript
+                run={run}
+                question={askedQuestion}
+                models={models}
+                pendingSpeakers={participants}
+                showSummary={false}
+              />
+              <div ref={bottomRef} />
+            </div>
+            {run.kind === "DISCUSSION" && (
+              <DiscussionComposer
+                runId={run.id}
+                disabled={TERMINAL.includes(run.status)}
+                onSent={() => {
+                  void refresh(run.id)
+                }}
+              />
+            )}
+          </div>
 
           {TERMINAL.includes(run.status) && (
             <>
@@ -353,10 +387,84 @@ export default function CouncilPage() {
               </div>
             </>
           )}
-          <div ref={bottomRef} />
         </div>
       )}
+
+      <SummaryModal
+        open={summaryOpen}
+        onClose={() => setSummaryOpen(false)}
+        content={run?.finalAnswer ?? null}
+      />
     </PageShell>
+  )
+}
+
+/**
+ * The closing summary, behind the 會議總結 button rather than appended to the
+ * transcript. The meeting is a chat; a long structured report inside the chat
+ * scroll buries the last thing anyone actually said.
+ */
+function SummaryModal({
+  open,
+  onClose,
+  content,
+}: {
+  open: boolean
+  onClose: () => void
+  content: string | null
+}) {
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+    }
+    document.addEventListener("keydown", onKey)
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.removeEventListener("keydown", onKey)
+      document.body.style.overflow = ""
+    }
+  }, [open, onClose])
+
+  if (!open) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 py-10"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t.discussion.summary}
+        className="w-full max-w-2xl rounded-lg border border-gray-200 bg-white"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-3">
+          <Gavel className="h-4 w-4 text-rose-brand" />
+          <h2 className="text-base font-semibold text-gray-900">
+            {t.discussion.summary}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="關閉"
+            className="ml-auto text-gray-400 transition-colors hover:text-gray-700"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="px-5 py-4">
+          {content ? (
+            <Markdown>{content}</Markdown>
+          ) : (
+            <p className="text-sm text-gray-400">
+              {t.discussion.summaryPending}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 

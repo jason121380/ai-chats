@@ -46,6 +46,13 @@ export interface ModelRunDto {
   createdAt?: string
 }
 
+/** Something the person typed mid-discussion. */
+export interface InterjectionDto {
+  id: string
+  content: string
+  createdAt: string
+}
+
 export interface CouncilRunDto {
   id: string
   sessionId: string
@@ -66,6 +73,7 @@ export interface CouncilRunDto {
   totalCostUsd: string | null
   totalLatencyMs: number | null
   errorMessage: string | null
+  interjections?: InterjectionDto[]
   createdAt: string
   modelRuns: ModelRunDto[]
   finalAnswer: string | null

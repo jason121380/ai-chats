@@ -58,6 +58,14 @@ export const t = {
     starting: "啟動中…",
   },
 
+  discussion: {
+    join: "加入討論",
+    composerHint: "插話…（目前這位講完後，下一位會回應你）",
+    composerClosed: "討論已結束，無法再發言。",
+    summary: "會議總結",
+    summaryPending: "討論結束後才會有總結。",
+  },
+
   transcript: {
     you: "你",
     round1: "第一輪",

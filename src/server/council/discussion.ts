@@ -9,7 +9,8 @@ import {
   buildDiscussionSystemPrompt,
   buildDiscussionUserPrompt,
 } from "./discussion-prompts"
-import type { DiscussionConfig, DiscussionTurn } from "./types"
+import { HUMAN_SPEAKER_NAME } from "./types"
+import type { DiscussionConfig, DiscussionEntry } from "./types"
 
 export const MAX_DISCUSSION_ROUNDS = 5
 
@@ -96,7 +97,8 @@ export async function runDiscussion(
       },
     })
 
-    const transcript: DiscussionTurn[] = []
+    const transcript: DiscussionEntry[] = []
+    const seenInterjections = new Set<string>()
     let failures = 0
     let turnIndex = 0
 
@@ -113,6 +115,20 @@ export async function runDiscussion(
       })
 
       for (const speaker of speakers) {
+        // Pick up anything the person typed since the previous turn ended.
+        // Polled here rather than pushed because the floor is the invariant:
+        // an interjection joins the transcript BETWEEN turns, never in the
+        // middle of one, so the next speaker answers it and nobody is
+        // interrupted mid-sentence.
+        turnIndex = await drainInterjections({
+          db,
+          runId: config.runId,
+          round,
+          turnIndex,
+          transcript,
+          seen: seenInterjections,
+        })
+
         const thisTurn = turnIndex
         turnIndex += 1
 
@@ -202,7 +218,16 @@ export async function runDiscussion(
     }
 
     if (transcript.length === 0) {
-      await finalizeRun(
+      turnIndex = await drainInterjections({
+      db,
+      runId: config.runId,
+      round: rounds,
+      turnIndex,
+      transcript,
+      seen: seenInterjections,
+    })
+
+    await finalizeRun(
         db,
         config.runId,
         "FAILED",
@@ -305,6 +330,50 @@ export async function runDiscussion(
       error: message,
     })
   }
+}
+
+/**
+ * Move any new human interjections into the transcript, in the order they were
+ * typed. Returns the next turn index.
+ *
+ * `seen` is per-run and in-memory: the loop is the only reader, and it drains
+ * on every turn, so a message is claimed exactly once without needing a
+ * "consumed" column on the row.
+ */
+async function drainInterjections({
+  db,
+  runId,
+  round,
+  turnIndex,
+  transcript,
+  seen,
+}: {
+  db: PrismaClient
+  runId: string
+  round: number
+  turnIndex: number
+  transcript: DiscussionEntry[]
+  seen: Set<string>
+}): Promise<number> {
+  const said = await db.message.findMany({
+    where: { councilRunId: runId, source: "USER" },
+    orderBy: { createdAt: "asc" },
+  })
+
+  let next = turnIndex
+  for (const message of said) {
+    if (seen.has(message.id)) continue
+    seen.add(message.id)
+    transcript.push({
+      speakerName: HUMAN_SPEAKER_NAME,
+      roundNumber: round,
+      turnIndex: next,
+      content: message.content,
+      isHuman: true,
+    })
+    next += 1
+  }
+  return next
 }
 
 /** Rebuild the speaking order of a stored discussion from the ledger. */

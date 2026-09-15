@@ -1,7 +1,8 @@
 import type { CouncilRole } from "@prisma/client"
 
 import { ROLE_DESCRIPTIONS } from "./prompts"
-import type { DiscussionTurn } from "./types"
+import { HUMAN_SPEAKER_NAME } from "./types"
+import type { DiscussionEntry } from "./types"
 
 /**
  * Discussion prompts are deliberately the OPPOSITE of the Council's critique
@@ -19,7 +20,7 @@ export function buildDiscussionSystemPrompt(
   participants: string[],
   roundNumber: number,
   totalRounds: number,
-  transcript: DiscussionTurn[]
+  transcript: DiscussionEntry[]
 ): string {
   const others = participants.filter((p) => p !== speakerName)
 
@@ -51,6 +52,9 @@ export function buildDiscussionSystemPrompt(
     "Taking the floor:",
     "- People speak one at a time and you have the floor right now. Say your piece and stop; do not continue past your own turn.",
     "- Never speak for another participant, quote words they have not said, or predict what they are about to say. If you want their view, the discussion will get there on their turn.",
+    // The human is not in `participants`: they asked the question, so the
+    // "has not spoken yet, do not address them" rule must never apply to them.
+    `- The person who asked the question is in the room as "${HUMAN_SPEAKER_NAME}" and may cut in at any time. If they have just spoken, answer them directly before anything else.`,
   ]
 
   if (previousSpeaker === null) {
@@ -101,7 +105,7 @@ export function buildDiscussionSystemPrompt(
 
 export function buildDiscussionUserPrompt(
   question: string,
-  transcript: DiscussionTurn[]
+  transcript: DiscussionEntry[]
 ): string {
   const parts: string[] = [`The question on the table:\n${question}`]
 
@@ -155,7 +159,7 @@ export function buildDiscussionSummarySystemPrompt(): string {
 
 export function buildDiscussionSummaryUserPrompt(
   question: string,
-  transcript: DiscussionTurn[]
+  transcript: DiscussionEntry[]
 ): string {
   const parts: string[] = [
     `The question:\n${question}`,

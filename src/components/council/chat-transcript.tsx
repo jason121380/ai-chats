@@ -30,12 +30,16 @@ export function ChatTranscript({
   question,
   models,
   pendingSpeakers = [],
+  showSummary = true,
 }: {
   run: CouncilRunDto
   question: string
   models: ModelConfigDto[]
   /** Participants selected for this run, so we can show them before they speak. */
   pendingSpeakers?: PendingSpeaker[]
+  /** False when the caller shows the closing summary itself — /council puts it
+   *  behind a 會議總結 button so the live meeting stays a chat. */
+  showSummary?: boolean
 }) {
   const nameFor = useMemo(() => {
     const byKey = new Map(
@@ -83,7 +87,7 @@ export function ChatTranscript({
         />
       )}
 
-      {run.finalAnswer && (
+      {showSummary && run.finalAnswer && (
         <>
           <ChatDivider
             label={
@@ -237,6 +241,28 @@ function DiscussionBody({
   // Round numbers come from the data as well as from totalRounds, so a turn is
   // never silently dropped from the transcript because its round is unexpected.
   const roundOf = (turn: ModelRunDto) => turn.roundNumber ?? 1
+
+  // Interjections only carry a timestamp, so place each one after the last
+  // model turn that finished before it — which is where the discussion loop
+  // put it in the transcript the models actually read. Anything typed before
+  // the first turn belongs at the top of the first round.
+  const turnTime = (turn: ModelRunDto) =>
+    new Date(turn.completedAt ?? turn.startedAt ?? 0).getTime()
+  const interjectionsAfter = (turnId: string | null, roundNumber: number) =>
+    (run.interjections ?? []).filter((said) => {
+      const at = new Date(said.createdAt).getTime()
+      let lastBefore: ModelRunDto | null = null
+      for (const turn of turns) {
+        if (turnTime(turn) <= at) lastBefore = turn
+      }
+      if (lastBefore === null) {
+        return (
+          turnId === null &&
+          roundNumber === (turns[0] ? roundOf(turns[0]) : 1)
+        )
+      }
+      return lastBefore.id === turnId
+    })
   const rounds = Array.from(
     new Set<number>([
       ...Array.from({ length: totalRounds }, (_, i) => i + 1),
@@ -275,12 +301,19 @@ function DiscussionBody({
                     : t.transcript.roundMiddle
               }
             />
+            {interjectionsAfter(null, roundNumber).map((said) => (
+              <ChatQuestion key={said.id} content={said.content} />
+            ))}
             {roundTurns.map((turn) => (
-              <ChatMessage
-                key={turn.id}
-                run={turn}
-                displayName={nameFor(turn.provider, turn.modelId)}
-              />
+              <div key={turn.id} className="space-y-5">
+                <ChatMessage
+                  run={turn}
+                  displayName={nameFor(turn.provider, turn.modelId)}
+                />
+                {interjectionsAfter(turn.id, roundNumber).map((said) => (
+                  <ChatQuestion key={said.id} content={said.content} />
+                ))}
+              </div>
             ))}
             {/* Discussion turns are sequential, so only the next speaker is typing. */}
             {waiting.slice(0, 1).map((p) => (
