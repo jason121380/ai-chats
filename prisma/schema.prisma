@@ -109,6 +109,9 @@ enum DiscussionStyle {
 
 enum PricingStatus {
   CALCULATED
+  /// Filled in after the fact, at a rate that was set later than the call.
+  /// Never produced by the router — only by the pricing backfill.
+  ESTIMATED
   MISSING
   UNSUPPORTED
 }

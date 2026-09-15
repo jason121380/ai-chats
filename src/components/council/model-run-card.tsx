@@ -69,7 +69,14 @@ export function ModelRunCard({
                     ? t.stats.noPrice
                     : formatUsd(run.totalCostUsd)}
                 </div>
-                <div>{t.stats.cost}</div>
+                <div>
+                  {t.stats.cost}
+                  {run.pricingStatus === "ESTIMATED" && (
+                    <span className="ml-1 text-amber-600">
+                      ({t.settings.estimated})
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           )}

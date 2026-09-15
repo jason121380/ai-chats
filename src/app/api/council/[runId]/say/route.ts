@@ -33,7 +33,7 @@ export async function POST(
     })
     if (!run) return jsonError(404, "找不到這場討論")
     if (run.kind !== "DISCUSSION") {
-      return jsonError(400, "只有圓桌討論可以中途加入發言")
+      return jsonError(400, "只有群組聊天可以中途加入發言")
     }
     // Refused rather than silently stored: a message nobody will ever read is
     // worse than an error, because the sender believes it landed.

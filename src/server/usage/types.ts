@@ -1,6 +1,10 @@
 import Decimal from "decimal.js"
 
-export type PricingStatusValue = "CALCULATED" | "MISSING" | "UNSUPPORTED"
+export type PricingStatusValue =
+  | "CALCULATED"
+  | "ESTIMATED"
+  | "MISSING"
+  | "UNSUPPORTED"
 
 /**
  * The price in force at the moment an AI call is made.

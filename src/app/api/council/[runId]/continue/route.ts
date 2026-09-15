@@ -53,7 +53,7 @@ export async function POST(
     })
     if (!run) return jsonError(404, "找不到這場討論")
     if (run.kind !== "DISCUSSION") {
-      return jsonError(400, "只有圓桌討論可以繼續")
+      return jsonError(400, "只有群組聊天可以繼續")
     }
     // Still running: the loop will pick the message up between turns on its
     // own, so this endpoint has nothing to add and must not start a second

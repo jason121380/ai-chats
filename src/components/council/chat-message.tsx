@@ -157,10 +157,23 @@ export function ChatMessage({
               {formatTokens(run.inputTokens)} / {formatTokens(run.outputTokens)}{" "}
               {t.stats.inOutTokens}
             </span>
-            <span>
+            <span
+              // An estimate is marked wherever the number appears. Unmarked,
+              // it is indistinguishable from what the call was billed at.
+              title={
+                run.pricingStatus === "ESTIMATED"
+                  ? t.settings.estimated
+                  : undefined
+              }
+            >
               {run.pricingStatus === "MISSING" && run.totalCostUsd === null
                 ? t.stats.noPrice
                 : formatUsd(run.totalCostUsd)}
+              {run.pricingStatus === "ESTIMATED" && (
+                <span className="ml-1 text-amber-600">
+                  ({t.settings.estimated})
+                </span>
+              )}
             </span>
             {run.attemptCount !== undefined && run.attemptCount > 1 && (
               <span>{t.stats.attempts(run.attemptCount)}</span>

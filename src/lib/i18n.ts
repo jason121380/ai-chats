@@ -16,30 +16,30 @@ export const t = {
 
   nav: {
     newChat: "新對話",
-    council: "議會",
+    council: "討論區",
     history: "歷史紀錄",
     usage: "用量",
     settings: "設定",
-    councilHint: "議會 · 獨立分析 → 匿名互評 → 主席裁決",
-    discussionHint: "討論 · 全員同場輪流發言",
+    councilHint: "各自回答 · 獨立分析 → 匿名互評 → 主席裁決",
+    discussionHint: "群組聊天 · 全員同場輪流發言",
   },
 
   mode: {
-    council: "議會",
+    council: "各自回答",
     councilHint: "先各自獨立分析，再匿名互評。避免互相影響。",
-    discussion: "圓桌討論",
+    discussion: "群組聊天",
     discussionHint: "全員在同一個房間輪流發言，看得到彼此並互相回應。",
   },
 
   council: {
-    title: "召開議會",
+    title: "新增討論",
     subtitle: "每個模型獨立分析，匿名互評後由主席做出裁決。",
-    discussionTitle: "圓桌討論",
-    discussionSubtitle: "模型輪流發言，看得到彼此，把問題吵清楚。",
+    discussionTitle: "群組聊天",
+    discussionSubtitle: "模型輪流發言，看得到彼此，一起把問題談清楚。",
     questionPlaceholder: "例如：我們明年是否應該投資越南的 Salon 市場？",
     questionPlaceholderDiscussion:
-      "例如：我們明年是否應該投資越南的 Salon 市場？讓他們吵一架。",
-    members: "議會成員",
+      "例如：我們明年是否應該投資越南的 Salon 市場？讓他們一起討論。",
+    members: "參與成員",
     participants: "與會者",
     chairman: "主席",
     summarizer: "總結撰寫者",
@@ -51,10 +51,10 @@ export const t = {
     styleDebateHint: "各自堅守立場，攻擊對方最弱的假設。",
     rounds: "發言輪數",
     withSummary: "產出總結",
-    start: "開始議會",
-    startDiscussion: "開始討論",
-    running: "議會進行中…",
-    runningDiscussion: "會議進行中…",
+    start: "開始各自回答",
+    startDiscussion: "開始群組聊天",
+    running: "各自回答中…",
+    runningDiscussion: "群組聊天進行中…",
     roundsEstimate: (participants: number, rounds: number) =>
       `${participants} 位與會者 × ${rounds} 輪 = ${participants * rounds} 則發言`,
     stage: (stage: string) => `階段：${stage}`,
@@ -136,7 +136,7 @@ export const t = {
     colUpdated: "更新時間",
     conversation: "對話內容",
     noMessages: "沒有訊息。",
-    councilRuns: "議會紀錄",
+    councilRuns: "討論紀錄",
     otherCalls: "其他模型呼叫",
     modelCalls: (n: number) => `${n} 次模型呼叫`,
     costBreakdown: "花費明細",
@@ -182,6 +182,16 @@ export const t = {
       n === 0 ? "全部已是現行價格" : `將新增 ${n} 筆價格`,
     applying: "套用中…",
     perMillion: "/ 1M",
+    backfill: "回填舊紀錄花費",
+    backfillHint:
+      "設定價格之前跑過的呼叫沒有花費，用量與歷史紀錄會把它們算成 0。這會用目前的價格替它們補上金額，並標記為「事後估算」——因為那是它們今天的價格，不是當時的帳單。已經有金額的紀錄不會被改。",
+    backfilling: "回填中…",
+    backfillDone: (filled: number, skipped: number) =>
+      skipped > 0
+        ? `已補上 ${filled} 筆；另有 ${skipped} 筆的模型仍未設定價格。`
+        : `已補上 ${filled} 筆花費紀錄。`,
+    backfillNone: "沒有需要回填的紀錄。",
+    estimated: "事後估算",
     addModelHint: "從各家近期的模型挑一個，或直接填入模型 ID。",
     recentModels: "近期模型",
     alreadyAdded: "已在清單",
@@ -201,7 +211,7 @@ export const t = {
     colProvider: "供應商",
     colModel: "模型",
     colEnabled: "啟用",
-    colRole: "議會角色",
+    colRole: "討論角色",
     colTemperature: "Temperature",
     colMaxOutput: "最大輸出",
     colPricing: "價格",
@@ -232,7 +242,7 @@ export const t = {
   errors: {
     enterQuestion: "請先輸入問題。",
     selectModel: "請至少選擇一個模型。",
-    selectTwo: "圓桌討論至少需要兩位與會者。",
+    selectTwo: "群組聊天至少需要兩位與會者。",
     selectChairman: "請選擇主席。",
     selectSummarizer: "請選擇總結撰寫者，或關閉總結功能。",
     startFailed: "啟動失敗",
@@ -264,14 +274,14 @@ export const t = {
   mode_: {
     SOLO: "單一對話",
     COMPARE: "並列比較",
-    COUNCIL: "議會",
-    DISCUSSION: "圓桌討論",
+    COUNCIL: "各自回答",
+    DISCUSSION: "群組聊天",
     BATTLE: "對戰",
   } as Record<string, string>,
 
   kind: {
-    COUNCIL: "議會",
-    DISCUSSION: "圓桌討論",
+    COUNCIL: "各自回答",
+    DISCUSSION: "群組聊天",
   } as Record<string, string>,
 
   source: {

@@ -243,6 +243,8 @@ function PricingTab() {
   const [rows, setRows] = useState<PricingRowDto[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [applying, setApplying] = useState(false)
+  const [backfilling, setBackfilling] = useState(false)
+  const [backfillNote, setBackfillNote] = useState<string | null>(null)
 
   const load = useCallback(() => {
     fetch("/api/pricing")
@@ -260,13 +262,44 @@ function PricingTab() {
   if (error) return <p className="text-sm text-red-500">{error}</p>
   if (!rows) return <Loader2 className="h-5 w-5 animate-spin text-rose-brand" />
 
+  const backfill = async () => {
+    setBackfilling(true)
+    setBackfillNote(null)
+    try {
+      const res = await fetch("/api/pricing/backfill", { method: "POST" })
+      const data = (await res.json()) as {
+        filled?: number
+        skipped?: number
+        error?: string
+      }
+      if (!res.ok) throw new Error(data.error ?? t.errors.requestFailed)
+      const filled = data.filled ?? 0
+      setBackfillNote(
+        filled === 0 && (data.skipped ?? 0) === 0
+          ? t.settings.backfillNone
+          : t.settings.backfillDone(filled, data.skipped ?? 0)
+      )
+    } catch (err) {
+      setBackfillNote(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBackfilling(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={backfill} disabled={backfilling}>
+          {backfilling ? t.settings.backfilling : t.settings.backfill}
+        </Button>
         <Button onClick={() => setApplying(true)}>
           {t.settings.applyPrices}
         </Button>
       </div>
+      <p className="text-xs text-gray-400">{t.settings.backfillHint}</p>
+      {backfillNote && (
+        <p className="text-sm text-gray-600">{backfillNote}</p>
+      )}
       <ApplyPricesDialog
         open={applying}
         onClose={() => setApplying(false)}
