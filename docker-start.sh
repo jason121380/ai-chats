@@ -1,5 +1,5 @@
 #!/bin/sh
-# Container entrypoint: migrate, then serve.
+# Container entrypoint: migrate, seed, then serve.
 #
 # Kept as a file rather than an inline CMD so the pre-flight check below can
 # exist. A failed `prisma migrate deploy` exits the container, the platform
@@ -21,7 +21,28 @@ fi
 echo "[start] database target: $(echo "$DATABASE_URL" | sed -E 's#(://[^:/]+):[^@]*@#\1:***@#')"
 echo "[start] applying migrations..."
 
+# Through npx, not bare: CMD runs this with a plain PATH, so
+# node_modules/.bin is not on it. (`npm run` below sets it up itself.)
 npx prisma migrate deploy
 
-echo "[start] migrations applied; starting Next.js"
+# Seed the ModelConfig rows. Migrations create the EMPTY table; without this
+# the app boots fine and the model list is blank, which reads as a bug.
+#
+# Idempotent by construction: the seed upserts, and its update branch only
+# rewrites displayName and sortOrder — it does NOT re-enable a model someone
+# turned off in 設定, so running it on every boot cannot undo that choice.
+#
+# Deliberately NOT fatal, unlike the migration above. A migration failure
+# means the schema does not match the code and serving would produce wrong
+# answers; a seed failure just means the model list is empty, and taking the
+# whole app down for that is the worse outcome.
+echo "[start] seeding model configuration..."
+if npm run --silent db:seed; then
+  echo "[start] seed complete"
+else
+  echo "[start] WARNING: seed failed — the app will start, but 設定 may list"
+  echo "[start] no models. Re-run 'npm run db:seed' against this database."
+fi
+
+echo "[start] starting Next.js"
 exec npm run start

@@ -244,13 +244,23 @@ npm start
 
 Steps:
 
-1. Create a PostgreSQL service in Zeabur and copy its connection string.
-2. Create a service from this GitHub repository.
-3. Set the environment variables listed above; `DATABASE_URL` points at the PostgreSQL service.
-4. Add `npx prisma migrate deploy` as the pre-start / release command so migrations run before the app boots.
-5. Push to `main` — Zeabur builds and deploys automatically.
-6. After the first deploy, run `npm run db:seed` once against the production database to create `ModelConfig` rows.
-7. Verify `GET /api/health` returns `{"status":"ok","database":"ok"}`.
+1. Create a PostgreSQL service in Zeabur and copy its **internal** connection string (the public one is for tools outside the platform).
+2. Create a service from this GitHub repository. The repo's `Dockerfile` is used, which deploys a persistent Node server — this app needs one, because `POST /api/council` keeps orchestrating in-process after it responds and `/api/council/:runId/stream` is a long-lived SSE connection.
+3. Set the environment variables listed above; `DATABASE_URL` points at the PostgreSQL service. It is the only required one, but at least one provider API key is needed before any model can be called.
+4. Push to `main` — Zeabur builds and deploys automatically.
+5. Verify `GET /api/health` returns `{"status":"ok","database":"ok"}`.
+
+`docker-start.sh` runs `prisma migrate deploy` and then the seed on every
+boot, so a fresh database provisions itself. A migration failure stops the
+container — serving against a schema that does not match the code produces
+wrong answers. A seed failure only logs a warning: the cost is an empty
+model list, and taking the app down for that is worse.
+
+The seed is safe to re-run. It upserts, and its update branch rewrites only
+`displayName` and `sortOrder` — disabling a model in 設定 survives every
+redeploy. It does mean `prisma/seed.ts` is the source of truth for which
+`ModelConfig` rows exist: a row deleted straight from the database comes
+back on the next boot.
 
 This project uses Prisma's driver-adapter + query-compiler mode (`engineType = "client"` with `@prisma/adapter-pg`), so no native query-engine binary needs to be downloaded at build time.
 
