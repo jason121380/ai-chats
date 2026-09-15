@@ -6,6 +6,7 @@ import { Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PRICE_CATALOG, type CatalogPrice } from "@/lib/price-catalog"
 import { t } from "@/lib/i18n"
+import { CURRENCY_PREFIX } from "@/lib/utils"
 import { PROVIDER_LABELS, type PricingRowDto } from "@/types/api"
 
 /**
@@ -150,7 +151,9 @@ export function ApplyPricesDialog({
                     {PROVIDER_LABELS[price.provider] ?? price.provider}
                   </span>
                   <span className="ml-auto text-sm tabular-nums text-gray-600">
-                    ${price.inputPerMillion} / ${price.outputPerMillion}
+                    {CURRENCY_PREFIX}
+                    {price.inputPerMillion} / {CURRENCY_PREFIX}
+                    {price.outputPerMillion}
                     <span className="ml-1 text-xs text-gray-400">
                       {t.settings.perMillion}
                     </span>

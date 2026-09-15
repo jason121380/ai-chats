@@ -26,6 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { formatDate, t } from "@/lib/i18n"
+import { CURRENCY_PREFIX } from "@/lib/utils"
 import {
   PROVIDER_LABELS,
   ROLE_LABELS,
@@ -342,16 +343,22 @@ function PricingTab() {
                 </TableCell>
                 <TableCell className="font-medium">{r.modelId}</TableCell>
                 <TableCell className="text-right">
-                  ${r.inputPerMillion}
+                  {CURRENCY_PREFIX}
+                  {r.inputPerMillion}
                 </TableCell>
                 <TableCell className="text-right">
-                  ${r.outputPerMillion}
+                  {CURRENCY_PREFIX}
+                  {r.outputPerMillion}
                 </TableCell>
                 <TableCell className="text-right">
-                  {r.cachedInputPerMillion ? `$${r.cachedInputPerMillion}` : "—"}
+                  {r.cachedInputPerMillion
+                    ? `${CURRENCY_PREFIX}${r.cachedInputPerMillion}`
+                    : "—"}
                 </TableCell>
                 <TableCell className="text-right">
-                  {r.reasoningPerMillion ? `$${r.reasoningPerMillion}` : "—"}
+                  {r.reasoningPerMillion
+                    ? `${CURRENCY_PREFIX}${r.reasoningPerMillion}`
+                    : "—"}
                 </TableCell>
                 <TableCell className="text-xs text-muted-foreground">
                   {formatDate(r.effectiveFrom)}
