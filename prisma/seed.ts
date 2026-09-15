@@ -32,8 +32,8 @@ interface SeedModel {
 const MODELS: SeedModel[] = [
   {
     provider: "OPENAI",
-    modelId: "gpt-5.1",
-    displayName: "GPT-5.1",
+    modelId: "gpt-5.6-luna",
+    displayName: "GPT-5.6 Luna",
     defaultRole: "STRATEGIST",
     sortOrder: 1,
     supportsReasoning: true,
@@ -47,8 +47,8 @@ const MODELS: SeedModel[] = [
   },
   {
     provider: "GOOGLE",
-    modelId: "gemini-2.5-pro",
-    displayName: "Gemini 2.5 Pro",
+    modelId: "gemini-3.8-flash",
+    displayName: "Gemini 3.8 Flash",
     defaultRole: "RESEARCHER",
     sortOrder: 3,
     supportsReasoning: true,
@@ -61,6 +61,26 @@ const MODELS: SeedModel[] = [
     sortOrder: 4,
     supportsReasoning: true,
   },
+]
+
+/**
+ * Model IDs this project has moved off. Changing `modelId` above creates a
+ * NEW row — the old one stays in the database, stays enabled, and keeps
+ * offering a model the provider now 404s on. Listing it here disables it on
+ * the next boot.
+ *
+ * Disabled, never deleted: the ModelRun ledger references these rows, and a
+ * disabled row keeps historical cost analytics readable.
+ *
+ * Only IDs named here are touched. A row someone inserted by hand is left
+ * alone — a seed that disabled everything it did not recognise would undo
+ * that choice on every redeploy, silently.
+ */
+const RETIRED: { provider: ProviderName; modelId: string }[] = [
+  // Returns an empty completion rather than an error (observed 2026-09-15).
+  { provider: "OPENAI", modelId: "gpt-5.1" },
+  // 404: "no longer available to new users" (observed 2026-09-15).
+  { provider: "GOOGLE", modelId: "gemini-2.5-pro" },
 ]
 
 interface PricingSeedRow {
@@ -95,6 +115,20 @@ async function main() {
       },
     })
     console.log(`ModelConfig ready: ${model.provider}/${model.modelId}`)
+  }
+
+  for (const retired of RETIRED) {
+    const { count } = await prisma.modelConfig.updateMany({
+      where: {
+        provider: retired.provider,
+        modelId: retired.modelId,
+        enabled: true,
+      },
+      data: { enabled: false },
+    })
+    if (count > 0) {
+      console.log(`ModelConfig disabled (retired): ${retired.provider}/${retired.modelId}`)
+    }
   }
 
   const pricingPath = join(__dirname, "pricing.json")
