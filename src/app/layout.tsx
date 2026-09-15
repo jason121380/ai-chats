@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 
+import { MobileNavProvider } from "@/components/layout/mobile-nav"
 import { Sidebar } from "@/components/layout/sidebar"
 import "./globals.css"
 
@@ -38,10 +39,12 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased">
-        <div className="flex min-h-screen bg-background">
-          <Sidebar />
-          <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
-        </div>
+        <MobileNavProvider>
+          <div className="flex min-h-screen bg-background">
+            <Sidebar />
+            <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
+          </div>
+        </MobileNavProvider>
       </body>
     </html>
   )

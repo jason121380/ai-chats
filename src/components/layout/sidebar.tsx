@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
+import { useMobileNav } from "@/components/layout/mobile-nav"
 import { cn } from "@/lib/utils"
 import { t } from "@/lib/i18n"
 
@@ -56,9 +57,27 @@ const NAV_GROUPS: NavGroup[] = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { open, setOpen } = useMobileNav()
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-sidebar shrink-0 flex-col border-r border-border bg-white md:flex">
+    <>
+      {/* Backdrop — mobile only; the desktop sidebar is part of the layout,
+          not an overlay. */}
+      {open && (
+        <button
+          type="button"
+          aria-label="關閉選單"
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 z-40 bg-black/20 md:hidden"
+        />
+      )}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex w-[280px] shrink-0 flex-col border-r border-border bg-white transition-transform duration-200",
+          "md:sticky md:top-0 md:h-screen md:w-sidebar md:translate-x-0 md:shadow-none",
+          open ? "translate-x-0 shadow-md" : "-translate-x-full"
+        )}
+      >
       {/* Logo header — same 60px band as the topbar next to it, so the
           two align across the divider. */}
       <div className="flex h-topbar shrink-0 items-center gap-2 border-b border-border px-4">
@@ -119,7 +138,8 @@ export function Sidebar() {
       >
         <div>{t.nav.councilHint}</div>
         <div>{t.nav.discussionHint}</div>
-      </div>
-    </aside>
+        </div>
+      </aside>
+    </>
   )
 }

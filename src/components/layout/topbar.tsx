@@ -1,5 +1,9 @@
-import type { ReactNode } from "react"
+"use client"
 
+import type { ReactNode } from "react"
+import { Menu } from "lucide-react"
+
+import { useMobileNav } from "@/components/layout/mobile-nav"
 import { cn } from "@/lib/utils"
 
 /**
@@ -22,6 +26,7 @@ export function Topbar({
   actions?: ReactNode
   className?: string
 }) {
+  const { setOpen } = useMobileNav()
   return (
     <header
       className={cn(
@@ -29,7 +34,17 @@ export function Topbar({
         className
       )}
     >
-      <h1 className="shrink-0 truncate text-[16px] font-bold tracking-tight text-ink">
+      {/* The sidebar is off-canvas below md, so this is the only way to
+          navigate on a phone. */}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="開啟選單"
+        className="-ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-orange-bg hover:text-orange active:scale-95 md:hidden"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+      <h1 className="min-w-0 shrink-0 truncate text-[16px] font-bold tracking-tight text-ink">
         {title}
       </h1>
       {subtitle && (
