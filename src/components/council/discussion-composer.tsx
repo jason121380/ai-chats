@@ -66,7 +66,13 @@ export function DiscussionComposer({
   }
 
   return (
-    <div className="border-t border-gray-100 bg-white p-3">
+    // Sticky to the bottom of the viewport, not merely the bottom of the card.
+    // On a short screen the card's own bottom edge starts below the fold, so a
+    // composer that only sat there would have to be scrolled to — and a chat
+    // box you have to go looking for is not a chat box. The transcript above
+    // carries matching bottom padding so its last message can always be
+    // scrolled clear of this.
+    <div className="sticky bottom-0 z-10 rounded-b-lg border-t border-gray-100 bg-white p-3">
       <div className="flex items-end gap-2">
         <Textarea
           rows={1}

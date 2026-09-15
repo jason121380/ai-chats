@@ -180,10 +180,15 @@ export default function SessionDetailPage() {
             </div>
 
             {/* A chat window, not a page section: the transcript owns its own
-                scroll so the composer stays put at the bottom instead of
-                sitting below however long the meeting ran. */}
-            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-              <div className="max-h-[min(65vh,620px)] space-y-4 overflow-y-auto bg-gray-50 p-4">
+                scroll so the composer stays at the bottom instead of sitting
+                below however long the meeting ran.
+
+                No `overflow-hidden` on this card, however tidy it would make
+                the corners — an overflow ancestor turns the composer's
+                `sticky` into a no-op, silently. The corners are rounded on
+                the two children instead. */}
+            <div className="rounded-lg border border-gray-200 bg-white">
+              <div className="max-h-[min(65vh,620px)] space-y-4 overflow-y-auto rounded-t-lg bg-gray-50 p-4 pb-24">
                 <ChatTranscript
                   run={run}
                   question={userQuestion}

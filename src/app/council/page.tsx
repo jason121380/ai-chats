@@ -374,8 +374,8 @@ export default function CouncilPage() {
           {/* A chat window, not a page section: the transcript owns its own
               scroll so the composer stays reachable while a long meeting
               runs, instead of being pushed below the fold. */}
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-            <div className="max-h-[min(70vh,640px)] space-y-4 overflow-y-auto bg-gray-50 p-4">
+          <div className="rounded-lg border border-gray-200 bg-white">
+            <div className="max-h-[min(70vh,640px)] space-y-4 overflow-y-auto rounded-t-lg bg-gray-50 p-4 pb-24">
               <ChatTranscript
                 run={run}
                 question={askedQuestion}
