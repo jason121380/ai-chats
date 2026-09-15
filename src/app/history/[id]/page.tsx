@@ -1,16 +1,17 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useParams } from "next/navigation"
-import { Loader2 } from "lucide-react"
+import { Coins, FileText, Gavel, Loader2 } from "lucide-react"
 
 import { PageShell } from "@/components/layout/page-shell"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Markdown } from "@/components/ui/markdown"
 import { ModelRunCard } from "@/components/council/model-run-card"
 import { ChatTranscript } from "@/components/council/chat-transcript"
+import { DiscussionComposer } from "@/components/council/discussion-composer"
+import { DetailModal } from "@/components/council/detail-modal"
 import { StatusBadge } from "@/components/models/model-picker"
 import { useModels } from "@/components/models/use-models"
 import { formatTokens, formatUsd } from "@/lib/utils"
@@ -24,23 +25,57 @@ import {
 } from "@/lib/i18n"
 import type { CouncilRunDto, SessionDetailDto } from "@/types/api"
 
+/** A run in one of these states is over; anything else is still sitting. */
+const TERMINAL = ["COMPLETED", "PARTIAL", "FAILED", "CANCELLED"]
+
 export default function SessionDetailPage() {
   const params = useParams<{ id: string }>()
   const { models } = useModels()
   const [session, setSession] = useState<SessionDetailDto | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [summaryOpen, setSummaryOpen] = useState(false)
+  const [costOpen, setCostOpen] = useState(false)
+  const bottomRef = useRef<HTMLDivElement | null>(null)
+
+  const load = useCallback(async (id: string) => {
+    const res = await fetch(`/api/sessions/${id}`)
+    if (!res.ok) throw new Error(t.errors.loadSession)
+    setSession((await res.json()) as SessionDetailDto)
+  }, [])
 
   useEffect(() => {
     if (!params?.id) return
-    fetch(`/api/sessions/${params.id}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error(t.errors.loadSession)
-        setSession((await res.json()) as SessionDetailDto)
+    load(params.id).catch((err) =>
+      setError(err instanceof Error ? err.message : String(err))
+    )
+  }, [params?.id, load])
+
+  const active = useMemo(
+    () =>
+      (session?.councilRuns ?? []).some((r) => !TERMINAL.includes(r.status)),
+    [session]
+  )
+
+  // Only polls while a run is actually sitting — which, on a history page, is
+  // the window between reopening a discussion and it finishing. A finished
+  // record does not change, and polling it forever would be a request every
+  // two seconds for a page left open in a tab.
+  useEffect(() => {
+    const id = params?.id
+    if (!id || !active) return
+    const interval = setInterval(() => {
+      load(id).catch(() => {
+        // transient — the next tick tries again
       })
-      .catch((err) =>
-        setError(err instanceof Error ? err.message : String(err))
-      )
-  }, [params?.id])
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [params?.id, active, load])
+
+  useEffect(() => {
+    if (active) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
+    }
+  }, [session, active])
 
   const grouped = useMemo((): {
     byCouncil: Map<string, SessionDetailDto["modelRuns"]>
@@ -61,16 +96,43 @@ export default function SessionDetailPage() {
     return { byCouncil, standalone }
   }, [session])
 
+  /** Every council run in this session, filled in with its runs and summary. */
+  const runs = useMemo((): CouncilRunDto[] => {
+    if (!session) return []
+    return session.councilRuns.map((councilRun) => {
+      const modelRuns = grouped.byCouncil.get(councilRun.id) ?? []
+      const chairmanRunIds = new Set(
+        modelRuns.filter((r) => r.stage === "CHAIRMAN").map((r) => r.id)
+      )
+      // Last, not first: continuing a discussion writes a new closing summary
+      // and the old one stays in the table. Messages arrive oldest-first, so
+      // `.find` would keep handing back the summary of a meeting that has
+      // since moved on.
+      const finalAnswer =
+        [...session.messages]
+          .reverse()
+          .find(
+            (m) =>
+              m.source === "CHAIRMAN" &&
+              m.modelRunId !== null &&
+              chairmanRunIds.has(m.modelRunId)
+          )?.content ?? null
+      return { ...councilRun, modelRuns, finalAnswer }
+    })
+  }, [session, grouped])
+
   if (error) return <p className="text-sm text-red-500">{error}</p>
   if (!session) {
-    return (
-      <Loader2 className="h-5 w-5 animate-spin text-rose-brand" />
-    )
+    return <Loader2 className="h-5 w-5 animate-spin text-rose-brand" />
   }
 
-  const isMultiModel = session.councilRuns.length > 0
+  const isMultiModel = runs.length > 0
   const userQuestion =
     session.messages.find((m) => m.source === "USER")?.content ?? ""
+  // One session holds one meeting: /council and /discussion each open their
+  // own. The corner buttons act on the latest one so the pathological case
+  // still points somewhere sensible rather than at the oldest.
+  const headline = runs[runs.length - 1] ?? null
 
   return (
     <PageShell
@@ -83,72 +145,73 @@ export default function SessionDetailPage() {
         </span>
       }
       actions={
-        <div className="text-right">
-          <div className="text-sm font-semibold text-gray-900">
-            {formatUsd(session.cost.totalCostUsd)} ·{" "}
-            {formatTokens(session.cost.totalTokens)} Token
+        headline ? (
+          <div className="flex items-center gap-1">
+            <CornerButton
+              label={t.discussion.summary}
+              onClick={() => setSummaryOpen(true)}
+              disabled={!headline.finalAnswer}
+              title={
+                headline.finalAnswer ? undefined : t.discussion.summaryPending
+              }
+            >
+              <FileText size={16} />
+            </CornerButton>
+            <CornerButton
+              label={t.discussion.costDetail}
+              onClick={() => setCostOpen(true)}
+            >
+              <Coins size={16} />
+            </CornerButton>
           </div>
-          <div className="text-xs text-gray-400">
-            {t.history.modelCalls(session.cost.modelCalls)}
-          </div>
-        </div>
+        ) : undefined
       }
     >
-
       {isMultiModel ? (
-        session.councilRuns.map((councilRun) => {
-          const runs = grouped.byCouncil.get(councilRun.id) ?? []
-          const chairmanRunIds = new Set(
-            runs.filter((r) => r.stage === "CHAIRMAN").map((r) => r.id)
-          )
-          const finalAnswer =
-            session.messages.find(
-              (m) =>
-                m.source === "CHAIRMAN" &&
-                m.modelRunId !== null &&
-                chairmanRunIds.has(m.modelRunId)
-            )?.content ?? null
-
-          const dto: CouncilRunDto = {
-            ...councilRun,
-            modelRuns: runs,
-            finalAnswer,
-          }
-
-          return (
-            <div key={councilRun.id} className="space-y-5">
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge status={councilRun.status} />
-                <Badge variant="outline">{kindLabel(councilRun.kind)}</Badge>
-                <span className="ml-auto text-xs text-muted-foreground">
-                  {formatTokens(councilRun.totalTokens)} Token ·{" "}
-                  {formatUsd(councilRun.totalCostUsd)}
-                </span>
-              </div>
-
-              <ChatTranscript
-                run={dto}
-                question={userQuestion}
-                models={models}
-              />
-
-              <Card>
-                <CardContent className="p-4">
-                  <CostBreakdown
-                    runs={runs}
-                    total={councilRun.totalCostUsd}
-                    kind={councilRun.kind}
-                  />
-                </CardContent>
-              </Card>
+        runs.map((run) => (
+          <div key={run.id} className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge status={run.status} />
+              <Badge variant="outline">{kindLabel(run.kind)}</Badge>
+              <span className="ml-auto text-xs text-muted-foreground">
+                {formatTokens(run.totalTokens)} Token ·{" "}
+                {formatUsd(run.totalCostUsd)}
+              </span>
             </div>
-          )
-        })
+
+            {/* A chat window, not a page section: the transcript owns its own
+                scroll so the composer stays put at the bottom instead of
+                sitting below however long the meeting ran. */}
+            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+              <div className="max-h-[min(65vh,620px)] space-y-4 overflow-y-auto bg-gray-50 p-4">
+                <ChatTranscript
+                  run={run}
+                  question={userQuestion}
+                  models={models}
+                  showSummary={false}
+                />
+                <div ref={bottomRef} />
+              </div>
+              {run.kind === "DISCUSSION" && (
+                <DiscussionComposer
+                  runId={run.id}
+                  finished={TERMINAL.includes(run.status)}
+                  canContinue
+                  onSent={() => {
+                    if (params?.id) void load(params.id).catch(() => {})
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        ))
       ) : (
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">{t.history.conversation}</h2>
           {session.messages.length === 0 && (
-            <p className="text-sm text-muted-foreground">{t.history.noMessages}</p>
+            <p className="text-sm text-muted-foreground">
+              {t.history.noMessages}
+            </p>
           )}
           {session.messages.map((m) => (
             <div
@@ -182,7 +245,63 @@ export default function SessionDetailPage() {
           ))}
         </section>
       )}
+
+      <DetailModal
+        open={summaryOpen}
+        onClose={() => setSummaryOpen(false)}
+        title={t.discussion.summary}
+        icon={<Gavel className="h-4 w-4 text-rose-brand" />}
+      >
+        {headline?.finalAnswer ? (
+          <Markdown>{headline.finalAnswer}</Markdown>
+        ) : (
+          <p className="text-sm text-gray-400">{t.discussion.summaryPending}</p>
+        )}
+      </DetailModal>
+
+      <DetailModal
+        open={costOpen}
+        onClose={() => setCostOpen(false)}
+        title={t.discussion.costDetail}
+        icon={<Coins className="h-4 w-4 text-rose-brand" />}
+      >
+        {headline && (
+          <CostBreakdown
+            runs={headline.modelRuns}
+            total={headline.totalCostUsd}
+            kind={headline.kind}
+          />
+        )}
+      </DetailModal>
     </PageShell>
+  )
+}
+
+/** An icon button in the page's top-right corner. */
+function CornerButton({
+  label,
+  onClick,
+  disabled,
+  title,
+  children,
+}: {
+  label: string
+  onClick: () => void
+  disabled?: boolean
+  title?: string
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={title ?? label}
+      className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition-colors hover:border-rose-light hover:text-rose-brand disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-200 disabled:hover:text-gray-500"
+    >
+      {children}
+    </button>
   )
 }
 

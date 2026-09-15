@@ -58,6 +58,33 @@ export type DiscussionEntry = DiscussionTurn | DiscussionHumanTurn
 
 export type DiscussionStyleName = "COLLABORATIVE" | "DEBATE"
 
+/**
+ * Picking a finished discussion back up where it stopped.
+ *
+ * The continuation runs through the same loop as the original — the only
+ * difference is that the transcript, the round counter and the turn index
+ * start from what is already in the ledger instead of from nothing. A second
+ * implementation would drift from the first, and the thing it would drift on
+ * is the ordering the models read.
+ */
+export interface DiscussionResume {
+  transcript: DiscussionEntry[]
+  /** The round the continuation's first turn belongs to. */
+  startRound: number
+  startTurnIndex: number
+  /**
+   * Interjection message ids already present in `transcript`.
+   *
+   * The loop claims a message by remembering its id in memory, which is
+   * enough for one continuous run and nothing more. On a continuation that
+   * memory is gone, so without this the first drain re-appends every message
+   * the person ever typed — at the BOTTOM, as the most recent thing said.
+   * The next speaker would then answer a question from three rounds ago
+   * believing it was just asked.
+   */
+  seenInterjectionIds: string[]
+}
+
 export interface DiscussionConfig {
   runId: string
   sessionId: string
@@ -68,6 +95,8 @@ export interface DiscussionConfig {
   style: DiscussionStyleName
   /** Optional closing summary. A discussion may end without one. */
   summarizer: { provider: ProviderName; modelId: string } | null
+  /** Set when continuing an existing discussion rather than opening one. */
+  resume?: DiscussionResume
 }
 
 export type CouncilEventType =

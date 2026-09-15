@@ -18,7 +18,18 @@ export async function GET(
       where: { id: params.id },
       include: {
         messages: { orderBy: { createdAt: "asc" } },
-        councilRuns: { orderBy: { createdAt: "asc" } },
+        councilRuns: {
+          orderBy: { createdAt: "asc" },
+          // Without these the history transcript shows every model turn and
+          // none of what the person themselves said — the one participant
+          // reading it back is the one who goes missing.
+          include: {
+            interjections: {
+              orderBy: { createdAt: "asc" },
+              select: { id: true, content: true, createdAt: true },
+            },
+          },
+        },
       },
     })
     if (!session) return jsonError(404, "Session not found")

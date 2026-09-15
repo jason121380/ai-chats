@@ -388,7 +388,12 @@ export default function CouncilPage() {
             {run.kind === "DISCUSSION" && (
               <DiscussionComposer
                 runId={run.id}
-                disabled={TERMINAL.includes(run.status)}
+                finished={TERMINAL.includes(run.status)}
+                // A finished meeting is continued from its history page,
+                // where the transcript is the page. Offering it here too
+                // would leave the starting form sitting above a meeting that
+                // had quietly restarted underneath it.
+                canContinue={false}
                 onSent={() => {
                   void refresh(run.id)
                 }}

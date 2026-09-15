@@ -60,12 +60,16 @@ export async function GET(
     })
     if (!run) return jsonError(404, "Council run not found")
 
+    // Newest first: continuing a discussion writes a fresh closing summary,
+    // and the meeting the reader is looking at is the one that just ended,
+    // not the one that ended before they added to it.
     const chairmanMessage = await prisma.message.findFirst({
       where: {
         sessionId: run.sessionId,
         source: "CHAIRMAN",
         modelRun: { councilRunId: run.id },
       },
+      orderBy: { createdAt: "desc" },
     })
 
     return NextResponse.json({

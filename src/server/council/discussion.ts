@@ -92,17 +92,27 @@ export async function runDiscussion(
       data: {
         status: "DISCUSSING",
         currentStage: "DISCUSSION",
-        currentRound: 1,
-        startedAt: new Date(),
+        currentRound: config.resume?.startRound ?? 1,
+        // A continuation keeps the meeting's original start time: 總耗時 is
+        // how long the meeting took, and resetting it would report the last
+        // few minutes as the whole thing.
+        ...(config.resume ? {} : { startedAt: new Date() }),
       },
     })
 
-    const transcript: DiscussionEntry[] = []
-    const seenInterjections = new Set<string>()
+    // A continuation carries the transcript so far, and its rounds are counted
+    // on from the last one rather than starting over at 1 — the person reading
+    // it is looking at one meeting, not two stapled together.
+    const transcript: DiscussionEntry[] = [...(config.resume?.transcript ?? [])]
+    const seenInterjections = new Set<string>(
+      config.resume?.seenInterjectionIds ?? []
+    )
     let failures = 0
-    let turnIndex = 0
+    let turnIndex = config.resume?.startTurnIndex ?? 0
+    const firstRound = config.resume?.startRound ?? 1
+    const lastRound = firstRound + rounds - 1
 
-    for (let round = 1; round <= rounds; round++) {
+    for (let round = firstRound; round <= lastRound; round++) {
       await db.councilRun.update({
         where: { id: config.runId },
         data: { currentRound: round },
@@ -157,7 +167,7 @@ export async function runDiscussion(
               speaker.role,
               participantNames,
               round,
-              rounds,
+              lastRound,
               transcript,
               config.style
             ),
@@ -222,7 +232,7 @@ export async function runDiscussion(
       turnIndex = await drainInterjections({
       db,
       runId: config.runId,
-      round: rounds,
+      round: lastRound,
       turnIndex,
       transcript,
       seen: seenInterjections,
@@ -377,13 +387,6 @@ async function drainInterjections({
   return next
 }
 
-/** Rebuild the speaking order of a stored discussion from the ledger. */
-export async function loadDiscussionTranscript(
-  db: PrismaClient,
-  runId: string
-) {
-  return db.modelRun.findMany({
-    where: { councilRunId: runId, stage: "DISCUSSION" },
-    orderBy: [{ roundNumber: "asc" }, { turnIndex: "asc" }],
-  })
-}
+// (A half-built transcript loader lived here. It had no callers and it
+// ignored interjections, so resuming on it would have dropped every line the
+// person typed. See resume.ts for the one that is actually used.)

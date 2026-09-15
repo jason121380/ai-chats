@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Send } from "lucide-react"
+import { Loader2, Send } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -10,35 +10,50 @@ import { t } from "@/lib/i18n"
 /**
  * The composer at the bottom of the discussion chat window.
  *
- * Sending only stores the message; the discussion loop reads it between turns.
- * That delay is deliberate and the placeholder says so — a person who types
- * mid-turn should expect the current speaker to finish, not be cut off.
+ * Two things can happen when it is used, and which one is not a mode the
+ * person picks — it follows from whether the meeting is still sitting:
+ *
+ *   running  → /say stores the message and the loop reads it between turns.
+ *              The delay is deliberate and the placeholder says so: someone
+ *              typing mid-turn should expect the speaker to finish.
+ *   finished → /continue puts the participants back in the room for another
+ *              round with the message already at the head of it.
+ *
+ * `canContinue` is false for a council run, which has no round to add.
  */
 export function DiscussionComposer({
   runId,
-  disabled,
+  finished,
+  canContinue = false,
   onSent,
 }: {
   runId: string
-  /** The meeting is over — nobody is left to read a new message. */
-  disabled: boolean
+  /** The meeting has ended — sending restarts it rather than joining it. */
+  finished: boolean
+  canContinue?: boolean
   onSent: () => void
 }) {
   const [value, setValue] = useState("")
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const continuing = finished && canContinue
+  const disabled = finished && !canContinue
+
   const send = async () => {
     const content = value.trim()
-    if (!content || sending) return
+    if (!content || sending || disabled) return
     setSending(true)
     setError(null)
     try {
-      const res = await fetch(`/api/council/${runId}/say`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
-      })
+      const res = await fetch(
+        `/api/council/${runId}/${continuing ? "continue" : "say"}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content }),
+        }
+      )
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? t.errors.requestFailed)
       setValue("")
@@ -57,7 +72,11 @@ export function DiscussionComposer({
           rows={1}
           className="min-h-[42px] flex-1"
           placeholder={
-            disabled ? t.discussion.composerClosed : t.discussion.composerHint
+            disabled
+              ? t.discussion.composerClosed
+              : continuing
+                ? t.discussion.composerContinue
+                : t.discussion.composerHint
           }
           value={value}
           disabled={disabled || sending}
@@ -73,11 +92,20 @@ export function DiscussionComposer({
           size="icon"
           onClick={send}
           disabled={disabled || sending || !value.trim()}
-          aria-label={t.discussion.join}
+          aria-label={continuing ? t.discussion.resume : t.discussion.join}
         >
-          <Send className="h-4 w-4" />
+          {sending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
         </Button>
       </div>
+      {continuing && !error && (
+        <p className="mt-2 text-xs text-gray-400">
+          {t.discussion.continueHint}
+        </p>
+      )}
       {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
     </div>
   )
