@@ -15,7 +15,7 @@ import { DiscussionComposer } from "@/components/council/discussion-composer"
  * was fixed, it started 20px below the viewport.
  */
 
-const CHAT_PAGES = [
+const CHAT_PAGES: readonly string[] = [
   join(__dirname, "..", "..", "src", "app", "history", "[id]", "page.tsx"),
   join(__dirname, "..", "..", "src", "app", "council", "page.tsx"),
 ]
@@ -70,16 +70,42 @@ describe("the composer stays on screen", () => {
     })
   }
 
-  it("leaves room under the last message for the composer to cover", () => {
-    for (const page of CHAT_PAGES) {
-      const source = readFileSync(page, "utf8")
-      const scroller = source
-        .split("\n")
-        .find((l) => l.includes("overflow-y-auto") && l.includes("max-h-"))
-      expect(scroller, `no transcript scroller found in ${page}`).toBeTruthy()
-      // Otherwise the sticky composer covers the newest message, which is the
-      // one the reader came for.
-      expect(scroller).toMatch(/\bpb-\d+/)
-    }
+  /**
+   * The two pages reach "composer at the bottom" differently, and each way
+   * has its own thing that must hold.
+   *
+   * /council is a card inside a scrolling page: its transcript is capped with
+   * max-h and the composer sticks over it, so the transcript needs bottom
+   * padding or the newest message — the one the reader came for — ends up
+   * underneath it.
+   */
+  it("council: leaves room under the last message for the composer to cover", () => {
+    const source = readFileSync(CHAT_PAGES[1] as string, "utf8")
+    const scroller = source
+      .split("\n")
+      .find((l) => l.includes("overflow-y-auto") && l.includes("max-h-"))
+    expect(scroller, "no capped transcript scroller on /council").toBeTruthy()
+    expect(scroller).toMatch(/\bpb-\d+/)
+  })
+
+  /**
+   * /history/[id] is a chat screen: it is exactly the height left under the
+   * app header, so the window never scrolls and the composer is a sibling of
+   * the transcript rather than something floating over it.
+   *
+   * `min-h-0` is the load-bearing part and the easiest to drop: without it a
+   * flex child refuses to shrink below its content, the transcript grows to
+   * its full height, and the whole page scrolls again — putting the composer
+   * back off the bottom of the screen, which is the exact complaint this
+   * layout answers.
+   */
+  it("history: the transcript is the only thing that scrolls", () => {
+    const source = readFileSync(CHAT_PAGES[0] as string, "utf8")
+    expect(source).toMatch(/h-\[calc\(100dvh-/)
+    const scroller = source
+      .split("\n")
+      .find((l) => l.includes("overflow-y-auto") && l.includes("flex-1"))
+    expect(scroller, "no flex transcript scroller on /history/[id]").toBeTruthy()
+    expect(scroller).toContain("min-h-0")
   })
 })

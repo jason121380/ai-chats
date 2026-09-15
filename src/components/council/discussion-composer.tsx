@@ -5,6 +5,7 @@ import { Loader2, Send } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
 import { t } from "@/lib/i18n"
 
 /**
@@ -26,12 +27,15 @@ export function DiscussionComposer({
   finished,
   canContinue = false,
   onSent,
+  className,
 }: {
   runId: string
   /** The meeting has ended — sending restarts it rather than joining it. */
   finished: boolean
   canContinue?: boolean
   onSent: () => void
+  /** Overrides the chrome — a page that is not a card wants no card edges. */
+  className?: string
 }) {
   const [value, setValue] = useState("")
   const [sending, setSending] = useState(false)
@@ -72,7 +76,12 @@ export function DiscussionComposer({
     // box you have to go looking for is not a chat box. The transcript above
     // carries matching bottom padding so its last message can always be
     // scrolled clear of this.
-    <div className="sticky bottom-0 z-10 rounded-b-lg border-t border-gray-100 bg-white p-3">
+    <div
+      className={cn(
+        "sticky bottom-0 z-10 rounded-b-lg border-t border-gray-100 bg-white p-3",
+        className
+      )}
+    >
       <div className="flex items-end gap-2">
         <Textarea
           rows={1}

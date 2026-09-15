@@ -13,16 +13,15 @@ import { ChatTranscript } from "@/components/council/chat-transcript"
 import { DiscussionComposer } from "@/components/council/discussion-composer"
 import { DetailModal } from "@/components/council/detail-modal"
 import { ConvertedNote } from "@/components/layout/converted-note"
-import { StatusBadge } from "@/components/models/model-picker"
 import { useModels } from "@/components/models/use-models"
 import { formatTokens } from "@/lib/utils"
 import { useMoney } from "@/components/layout/currency-context"
 import {
   formatDateTime,
-  kindLabel,
   modeLabel,
   sourceLabel,
   stageLabel,
+  statusLabel,
   t,
 } from "@/lib/i18n"
 import type { CouncilRunDto, SessionDetailDto } from "@/types/api"
@@ -129,131 +128,16 @@ export default function SessionDetailPage() {
     return <Loader2 className="h-5 w-5 animate-spin text-rose-brand" />
   }
 
-  const isMultiModel = runs.length > 0
+  const isDiscussion = runs.length > 0
   const userQuestion =
     session.messages.find((m) => m.source === "USER")?.content ?? ""
   // One session holds one meeting: /council and /discussion each open their
-  // own. The corner buttons act on the latest one so the pathological case
-  // still points somewhere sensible rather than at the oldest.
+  // own. The corner buttons and the composer act on the latest one so the
+  // pathological case still points somewhere sensible rather than the oldest.
   const headline = runs[runs.length - 1] ?? null
 
-  return (
-    <PageShell
-      width="narrow"
-      title={session.title}
-      description={
-        <span className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">{modeLabel(session.mode)}</Badge>
-          {formatDateTime(session.createdAt)}
-        </span>
-      }
-      actions={
-        headline ? (
-          <div className="flex items-center gap-1">
-            <CornerButton
-              label={t.discussion.summary}
-              onClick={() => setSummaryOpen(true)}
-              disabled={!headline.finalAnswer}
-              title={
-                headline.finalAnswer ? undefined : t.discussion.summaryPending
-              }
-            >
-              <FileText size={16} />
-            </CornerButton>
-            <CornerButton
-              label={t.discussion.costDetail}
-              onClick={() => setCostOpen(true)}
-            >
-              <Coins size={16} />
-            </CornerButton>
-          </div>
-        ) : undefined
-      }
-    >
-      {isMultiModel ? (
-        runs.map((run) => (
-          <div key={run.id} className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge status={run.status} />
-              <Badge variant="outline">{kindLabel(run.kind)}</Badge>
-              <span className="ml-auto text-xs text-muted-foreground">
-                {formatTokens(run.totalTokens)} Token ·{" "}
-                {money.format(run.totalCostUsd)}
-              </span>
-            </div>
-
-            {/* A chat window, not a page section: the transcript owns its own
-                scroll so the composer stays at the bottom instead of sitting
-                below however long the meeting ran.
-
-                No `overflow-hidden` on this card, however tidy it would make
-                the corners — an overflow ancestor turns the composer's
-                `sticky` into a no-op, silently. The corners are rounded on
-                the two children instead. */}
-            <div className="rounded-lg border border-gray-200 bg-white">
-              <div className="max-h-[min(65vh,620px)] space-y-4 overflow-y-auto rounded-t-lg bg-gray-50 p-4 pb-24">
-                <ChatTranscript
-                  run={run}
-                  question={userQuestion}
-                  models={models}
-                  showSummary={false}
-                />
-                <div ref={bottomRef} />
-              </div>
-              {run.kind === "DISCUSSION" && (
-                <DiscussionComposer
-                  runId={run.id}
-                  finished={TERMINAL.includes(run.status)}
-                  canContinue
-                  onSent={() => {
-                    if (params?.id) void load(params.id).catch(() => {})
-                  }}
-                />
-              )}
-            </div>
-          </div>
-        ))
-      ) : (
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold">{t.history.conversation}</h2>
-          {session.messages.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              {t.history.noMessages}
-            </p>
-          )}
-          {session.messages.map((m) => (
-            <div
-              key={m.id}
-              className={
-                m.source === "USER"
-                  ? "ml-auto max-w-[85%] rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground"
-                  : "mr-auto max-w-[85%] rounded-lg border border-border bg-white px-3 py-2 text-sm"
-              }
-            >
-              {m.source !== "USER" && (
-                <div className="mb-1 text-[10px] tracking-wide text-muted-foreground">
-                  {sourceLabel(m.source)}
-                </div>
-              )}
-              {m.source === "USER" ? (
-                <div className="whitespace-pre-wrap">{m.content}</div>
-              ) : (
-                <Markdown>{m.content}</Markdown>
-              )}
-            </div>
-          ))}
-        </section>
-      )}
-
-      {grouped.standalone.length > 0 && isMultiModel && (
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold">{t.history.otherCalls}</h2>
-          {grouped.standalone.map((r) => (
-            <ModelRunCard key={r.id} run={r} />
-          ))}
-        </section>
-      )}
-
+  const detailModals = (
+    <>
       <DetailModal
         open={summaryOpen}
         onClose={() => setSummaryOpen(false)}
@@ -284,7 +168,148 @@ export default function SessionDetailPage() {
           </>
         )}
       </DetailModal>
-    </PageShell>
+    </>
+  )
+
+  // A session that is not a meeting — a solo or compare chat — has no rounds
+  // and nothing to send, so it stays an ordinary scrolling page.
+  if (!isDiscussion) {
+    return (
+      <PageShell
+        width="narrow"
+        title={session.title}
+        description={
+          <span className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">{modeLabel(session.mode)}</Badge>
+            {formatDateTime(session.createdAt)}
+          </span>
+        }
+      >
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">{t.history.conversation}</h2>
+          {session.messages.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              {t.history.noMessages}
+            </p>
+          )}
+          {session.messages.map((m) => (
+            <div
+              key={m.id}
+              className={
+                m.source === "USER"
+                  ? "ml-auto max-w-[85%] rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground"
+                  : "mr-auto max-w-[85%] rounded-lg border border-border bg-white px-3 py-2 text-sm"
+              }
+            >
+              {m.source !== "USER" && (
+                <div className="mb-1 text-[10px] tracking-wide text-muted-foreground">
+                  {sourceLabel(m.source)}
+                </div>
+              )}
+              {m.source === "USER" ? (
+                <div className="whitespace-pre-wrap">{m.content}</div>
+              ) : (
+                <Markdown>{m.content}</Markdown>
+              )}
+            </div>
+          ))}
+        </section>
+        {detailModals}
+      </PageShell>
+    )
+  }
+
+  return (
+    // A chat screen, not a page: exactly the height left under the app
+    // header, so the window itself never scrolls and the composer is at the
+    // bottom of the SCREEN rather than at the bottom of a document you have
+    // to travel to. The subtracted values are the header (h-14) plus this
+    // main element's own padding (p-4 / md:p-8); a test pins them to the
+    // shell so a change there cannot quietly leave a scrolling page behind.
+    <div className="mx-auto flex h-[calc(100dvh-5.5rem)] max-w-3xl flex-col md:h-[calc(100dvh-7.5rem)]">
+      {/* Two lines of chrome, not five. Everything else that used to live up
+          here — status, kind, tokens, cost — is either a word in the meta
+          line or behind one of the two icons. */}
+      <div className="flex shrink-0 items-start gap-2 pb-2">
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-base font-semibold text-gray-900">
+            {session.title}
+          </h1>
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-gray-400">
+            <span>{modeLabel(session.mode)}</span>
+            <span aria-hidden>·</span>
+            <span>{formatDateTime(session.createdAt)}</span>
+            {headline && (
+              <>
+                <span aria-hidden>·</span>
+                <span>{statusLabel(headline.status)}</span>
+                <span aria-hidden>·</span>
+                <span>
+                  {formatTokens(headline.totalTokens)} Token ·{" "}
+                  {money.format(headline.totalCostUsd)}
+                </span>
+              </>
+            )}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <CornerButton
+            label={t.discussion.summary}
+            onClick={() => setSummaryOpen(true)}
+            disabled={!headline?.finalAnswer}
+            title={headline?.finalAnswer ? undefined : t.discussion.summaryPending}
+          >
+            <FileText size={16} />
+          </CornerButton>
+          <CornerButton
+            label={t.discussion.costDetail}
+            onClick={() => setCostOpen(true)}
+          >
+            <Coins size={16} />
+          </CornerButton>
+        </div>
+      </div>
+
+      {/* The only thing on this screen that scrolls. No card around it: the
+          messages are already bubbles on the page background, and a frame
+          around a frame only costs the conversation vertical room. */}
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto pb-4">
+        {runs.map((run) => (
+          <ChatTranscript
+            key={run.id}
+            run={run}
+            question={userQuestion}
+            models={models}
+            showSummary={false}
+          />
+        ))}
+        {grouped.standalone.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold text-gray-500">
+              {t.history.otherCalls}
+            </h2>
+            {grouped.standalone.map((r) => (
+              <ModelRunCard key={r.id} run={r} />
+            ))}
+          </section>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {headline?.kind === "DISCUSSION" && (
+        <DiscussionComposer
+          runId={headline.id}
+          finished={TERMINAL.includes(headline.status)}
+          canContinue
+          className="shrink-0 border-t border-gray-200 bg-transparent px-0 pb-0"
+          onSent={() => {
+            if (params?.id) void load(params.id).catch(() => {})
+          }}
+        />
+      )}
+
+      {detailModals}
+    </div>
   )
 }
 
