@@ -56,12 +56,16 @@ export interface DiscussionHumanTurn {
 /** Anything said in a discussion, in speaking order. */
 export type DiscussionEntry = DiscussionTurn | DiscussionHumanTurn
 
+export type DiscussionStyleName = "COLLABORATIVE" | "DEBATE"
+
 export interface DiscussionConfig {
   runId: string
   sessionId: string
   question: string
   participants: CouncilModelSelection[]
   rounds: number
+  /** Collaboration by default — see buildDiscussionSystemPrompt. */
+  style: DiscussionStyleName
   /** Optional closing summary. A discussion may end without one. */
   summarizer: { provider: ProviderName; modelId: string } | null
 }

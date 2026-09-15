@@ -158,7 +158,8 @@ export async function runDiscussion(
               participantNames,
               round,
               rounds,
-              transcript
+              transcript,
+              config.style
             ),
             messages: [
               {

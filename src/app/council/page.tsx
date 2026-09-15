@@ -44,6 +44,9 @@ export default function CouncilPage() {
   const [chairman, setChairman] = useState<string | null>(null)
   const [withSummary, setWithSummary] = useState(true)
   const [rounds, setRounds] = useState(2)
+  const [style, setStyle] = useState<"COLLABORATIVE" | "DEBATE">(
+    "COLLABORATIVE"
+  )
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [runId, setRunId] = useState<string | null>(null)
@@ -156,6 +159,7 @@ export default function CouncilPage() {
               message: asked,
               participants: chosen,
               rounds,
+              style,
               summarizer:
                 withSummary && chairman ? parseKey(chairman) : null,
             }
@@ -249,6 +253,32 @@ export default function CouncilPage() {
 
           {mode === "DISCUSSION" && (
             <div className="flex flex-wrap items-center gap-6">
+              <div>
+                <p className="mb-2 text-sm font-medium">{t.council.style}</p>
+                <div className="flex gap-1">
+                  {(
+                    [
+                      ["COLLABORATIVE", t.council.styleCollaborative],
+                      ["DEBATE", t.council.styleDebate],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <Button
+                      key={value}
+                      size="sm"
+                      variant={style === value ? "default" : "outline"}
+                      onClick={() => setStyle(value)}
+                      disabled={active}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {style === "DEBATE"
+                    ? t.council.styleDebateHint
+                    : t.council.styleCollaborativeHint}
+                </p>
+              </div>
               <div>
                 <p className="mb-2 text-sm font-medium">{t.council.rounds}</p>
                 <div className="flex gap-1">
@@ -345,7 +375,7 @@ export default function CouncilPage() {
               scroll so the composer stays reachable while a long meeting
               runs, instead of being pushed below the fold. */}
           <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-            <div className="max-h-[min(70vh,640px)] space-y-5 overflow-y-auto p-4">
+            <div className="max-h-[min(70vh,640px)] space-y-4 overflow-y-auto bg-gray-50 p-4">
               <ChatTranscript
                 run={run}
                 question={askedQuestion}

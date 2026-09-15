@@ -84,6 +84,7 @@ async function createRun(
     runId: run.id,
     sessionId: session.id,
     question,
+    style: "COLLABORATIVE" as const,
     participants: providers.map((p) => ({
       provider: p,
       modelId: MODELS[p],

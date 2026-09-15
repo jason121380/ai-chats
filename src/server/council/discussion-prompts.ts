@@ -2,7 +2,7 @@ import type { CouncilRole } from "@prisma/client"
 
 import { ROLE_DESCRIPTIONS } from "./prompts"
 import { HUMAN_SPEAKER_NAME } from "./types"
-import type { DiscussionEntry } from "./types"
+import type { DiscussionEntry, DiscussionStyleName } from "./types"
 
 /**
  * Discussion prompts are deliberately the OPPOSITE of the Council's critique
@@ -20,7 +20,8 @@ export function buildDiscussionSystemPrompt(
   participants: string[],
   roundNumber: number,
   totalRounds: number,
-  transcript: DiscussionEntry[]
+  transcript: DiscussionEntry[],
+  style: DiscussionStyleName = "COLLABORATIVE"
 ): string {
   const others = participants.filter((p) => p !== speakerName)
 
@@ -80,9 +81,33 @@ export function buildDiscussionSystemPrompt(
     "- Talk like a person in a meeting, not like a report. No headings, no numbered outlines.",
     "- Keep it short: two to four short paragraphs at most. Others still need to speak.",
     "- Add something new. If you only agree, say so in one line and then add the point nobody has made yet.",
-    "- Disagree openly when you disagree. A meeting where everyone agrees is a waste of everyone's time.",
     "- Do not summarize the discussion so far — everyone was there.",
-    "- Do not write your own name as a prefix; the interface already shows who is speaking.",
+    "- Do not write your own name as a prefix; the interface already shows who is speaking."
+  )
+
+  // The posture. Without one of these the model defaults to argument: a
+  // roomful of experts each demonstrating what the last one missed reads as a
+  // fight, and a fight does not converge on an answer.
+  if (style === "DEBATE") {
+    lines.push(
+      "",
+      "This meeting is a DEBATE. Argue your position.",
+      "- Disagree openly when you disagree. A debate where everyone agrees is a waste of everyone's time.",
+      "- Attack the weakest assumption in what has been said, and say why it fails.",
+      "- Hold your position unless someone gives you a reason to move."
+    )
+  } else {
+    lines.push(
+      "",
+      "This meeting is a COLLABORATION. You are building ONE answer together, not competing for the best take.",
+      "- Start from what the previous speaker got right and take it further. Additions beat rebuttals.",
+      "- Disagree only when it would change what the group actually decides — and then say what evidence would settle it, instead of restating your view louder.",
+      "- Fill the gaps rather than re-arguing covered ground: the missing number, the unasked question, the step nobody has costed.",
+      "- Credit whoever made a point before you build on it; the group is trying to converge, not to win."
+    )
+  }
+
+  lines.push(
     "",
     REPLY_LANGUAGE,
     "Refer to the other participants by the names given above, exactly as written."

@@ -302,7 +302,11 @@ function DiscussionBody({
               }
             />
             {interjectionsAfter(null, roundNumber).map((said) => (
-              <ChatQuestion key={said.id} content={said.content} />
+              <ChatQuestion
+                key={said.id}
+                content={said.content}
+                at={said.createdAt}
+              />
             ))}
             {roundTurns.map((turn) => (
               <div key={turn.id} className="space-y-5">
@@ -311,7 +315,11 @@ function DiscussionBody({
                   displayName={nameFor(turn.provider, turn.modelId)}
                 />
                 {interjectionsAfter(turn.id, roundNumber).map((said) => (
-                  <ChatQuestion key={said.id} content={said.content} />
+                  <ChatQuestion
+                key={said.id}
+                content={said.content}
+                at={said.createdAt}
+              />
                 ))}
               </div>
             ))}

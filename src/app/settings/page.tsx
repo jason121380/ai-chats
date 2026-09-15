@@ -5,6 +5,7 @@ import { Loader2, Plus } from "lucide-react"
 
 import { PageShell } from "@/components/layout/page-shell"
 import { AddModelDialog } from "@/components/models/add-model-dialog"
+import { ApplyPricesDialog } from "@/components/models/apply-prices-dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
@@ -191,8 +192,9 @@ function ModelsTab() {
 function PricingTab() {
   const [rows, setRows] = useState<PricingRowDto[] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [applying, setApplying] = useState(false)
 
-  useEffect(() => {
+  const load = useCallback(() => {
     fetch("/api/pricing")
       .then(async (res) => {
         if (!res.ok) throw new Error(t.errors.loadPricing)
@@ -203,11 +205,25 @@ function PricingTab() {
       )
   }, [])
 
+  useEffect(load, [load])
+
   if (error) return <p className="text-sm text-red-500">{error}</p>
   if (!rows) return <Loader2 className="h-5 w-5 animate-spin text-rose-brand" />
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button onClick={() => setApplying(true)}>
+          {t.settings.applyPrices}
+        </Button>
+      </div>
+      <ApplyPricesDialog
+        open={applying}
+        onClose={() => setApplying(false)}
+        onApplied={load}
+        rows={rows}
+      />
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
       <Table>
         <TableHeader>
           <TableRow>
@@ -272,6 +288,7 @@ function PricingTab() {
           })}
         </TableBody>
       </Table>
+      </div>
     </div>
   )
 }

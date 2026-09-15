@@ -100,6 +100,13 @@ enum ModelRunStatus {
   CANCELLED
 }
 
+/// How a discussion is meant to be conducted. Collaborative is the default:
+/// a group that is building one answer, not scoring points.
+enum DiscussionStyle {
+  COLLABORATIVE
+  DEBATE
+}
+
 enum PricingStatus {
   CALCULATED
   MISSING
@@ -184,6 +191,10 @@ model CouncilRun {
   /// round is in progress.
   totalRounds  Int?
   currentRound Int?
+
+  /// DISCUSSION only. Stored rather than kept in the run config so history
+  /// shows how a meeting was conducted, not just what was said.
+  discussionStyle DiscussionStyle @default(COLLABORATIVE)
 
   /// A Discussion may run without a closing summary, so these are optional.
   chairmanProvider ProviderName?

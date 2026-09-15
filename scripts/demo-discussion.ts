@@ -212,6 +212,7 @@ async function main() {
       question: QUESTION,
       participants: PARTICIPANTS,
       rounds: 2,
+      style: "COLLABORATIVE",
       summarizer: { provider: "OPENAI", modelId: "gpt-5.1" },
     },
     { db, registry }

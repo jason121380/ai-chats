@@ -23,6 +23,7 @@ const discussionSchema = z.object({
   message: z.string().min(1).max(32_000),
   participants: z.array(modelSelectionSchema).min(2).max(6),
   rounds: z.number().int().min(1).max(MAX_DISCUSSION_ROUNDS).default(2),
+  style: z.enum(["COLLABORATIVE", "DEBATE"]).default("COLLABORATIVE"),
   /** Optional — a discussion can end without a closing summary. */
   summarizer: modelSelectionSchema.nullable().optional(),
 })
@@ -85,6 +86,7 @@ export async function POST(req: NextRequest) {
           kind: "DISCUSSION",
           status: "PENDING",
           totalRounds: body.rounds,
+          discussionStyle: body.style,
           chairmanProvider: summarizer
             ? (summarizer.provider as ProviderName)
             : null,
@@ -104,6 +106,7 @@ export async function POST(req: NextRequest) {
           modelId: m.modelId,
         })),
         rounds: body.rounds,
+        style: body.style,
         summarizer: summarizer
           ? {
               provider: summarizer.provider as ProviderName,

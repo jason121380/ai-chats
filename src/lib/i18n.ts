@@ -44,6 +44,11 @@ export const t = {
     chairman: "主席",
     summarizer: "總結撰寫者",
     selectChairmanPlaceholder: "選擇主席模型",
+    style: "討論方式",
+    styleCollaborative: "合作",
+    styleDebate: "辯論",
+    styleCollaborativeHint: "共同建立一個答案，補彼此的缺口。",
+    styleDebateHint: "各自堅守立場，攻擊對方最弱的假設。",
     rounds: "發言輪數",
     withSummary: "產出總結",
     start: "開始議會",
@@ -166,6 +171,13 @@ export const t = {
 
   settings: {
     addModel: "新增模型",
+    applyPrices: "套用官方價格",
+    applyPricesHint:
+      "以各家公告的每百萬 token 價格新增一筆生效中的價格列。舊列只會被關閉，歷史花費快照不會被改寫。",
+    applyPricesCount: (n: number) =>
+      n === 0 ? "全部已是現行價格" : `將新增 ${n} 筆價格`,
+    applying: "套用中…",
+    perMillion: "/ 1M",
     addModelHint: "從各家近期的模型挑一個，或直接填入模型 ID。",
     recentModels: "近期模型",
     alreadyAdded: "已在清單",

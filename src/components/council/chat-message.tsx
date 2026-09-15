@@ -86,25 +86,14 @@ export function ChatMessage({
   const time = run.completedAt ?? run.startedAt
 
   return (
-    <div className="flex gap-3">
+    // Telegram's incoming-message shape: avatar at the bottom-left of the
+    // bubble, name in the speaker's colour inside the bubble, timestamp
+    // tucked into the bottom-right corner instead of sitting on its own row.
+    <div className="flex items-end gap-2">
       <Avatar name={displayName} provider={run.provider} />
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <span className={cn("text-sm font-semibold", style.name)}>
-            {displayName}
-          </span>
-          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-            {ROLE_LABELS[run.role] ?? run.role}
-          </span>
-          {time && (
-            <span className="text-xs text-muted-foreground">
-              {formatTime(time)}
-            </span>
-          )}
-        </div>
-
+      <div className="min-w-0 max-w-[85%]">
         {failed ? (
-          <div className="mt-1 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          <div className="flex items-start gap-2 rounded-2xl rounded-bl-md border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <div>
               <div className="font-medium">
@@ -124,13 +113,21 @@ export function ChatMessage({
         ) : (
           <div
             className={cn(
-              "mt-1 overflow-hidden rounded-lg border border-gray-200 bg-white",
-              highlight && "border-rose-brand"
+              "overflow-hidden rounded-2xl rounded-bl-md bg-white",
+              highlight && "ring-1 ring-rose-brand"
             )}
           >
             <div className="flex">
               <div className={cn("w-1 shrink-0", style.accent)} />
-              <div className="min-w-0 flex-1 px-3 py-2.5">
+              <div className="min-w-0 flex-1 px-3.5 py-2.5">
+                <div className="mb-0.5 flex flex-wrap items-baseline gap-x-2">
+                  <span className={cn("text-sm font-semibold", style.name)}>
+                    {displayName}
+                  </span>
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    {ROLE_LABELS[run.role] ?? run.role}
+                  </span>
+                </div>
                 {run.response ? (
                   <Markdown>{run.response}</Markdown>
                 ) : inFlight ? (
@@ -142,6 +139,11 @@ export function ChatMessage({
                   <p className="text-sm italic text-muted-foreground">
                     {t.transcript.noContent}
                   </p>
+                )}
+                {time && (
+                  <div className="mt-1 text-right text-[10px] leading-none text-muted-foreground/70">
+                    {formatTime(time)}
+                  </div>
                 )}
               </div>
             </div>
@@ -222,19 +224,34 @@ export function ChatDivider({
   )
 }
 
-/** The person's own question, opening the meeting. */
-export function ChatQuestion({ content }: { content: string }) {
+/**
+ * Something the person said — the opening question, or an interjection.
+ *
+ * Telegram's outgoing shape: right-aligned, tinted, no avatar. Side and colour
+ * are what separate "you" from the models at a glance; a label would be
+ * redundant next to a bubble that is already on your side of the window.
+ */
+export function ChatQuestion({
+  content,
+  at,
+}: {
+  content: string
+  /** Timestamp, when there is one to show. */
+  at?: string | null
+}) {
   return (
-    <div className="flex gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-        {t.transcript.you}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-semibold">{t.transcript.you}</div>
-        <div className="mt-1 whitespace-pre-wrap rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm">
+    <div className="flex justify-end">
+      <div className="max-w-[85%] rounded-2xl rounded-br-md bg-rose-light/60 px-3.5 py-2.5">
+        <div className="whitespace-pre-wrap text-sm text-gray-900">
           {content}
         </div>
+        {at && (
+          <div className="mt-1 text-right text-[10px] leading-none text-rose-dark/60">
+            {formatTime(at)}
+          </div>
+        )}
       </div>
     </div>
   )
 }
+
