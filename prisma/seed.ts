@@ -69,11 +69,14 @@ const MODELS: SeedModel[] = [
  * offering a model the provider now 404s on. Listing it here disables it on
  * the next boot.
  *
- * Disabled, never deleted: the ModelRun ledger references these rows, and a
- * disabled row keeps historical cost analytics readable.
+ * Deleted, not just disabled. ModelRun records `provider` / `modelId` as
+ * plain columns with no foreign key to ModelConfig, so removing the row
+ * costs the ledger nothing — past calls keep their tokens, price snapshot
+ * and cost. Leaving a disabled row behind only kept a dead model in front
+ * of the operator in 設定 forever.
  *
  * Only IDs named here are touched. A row someone inserted by hand is left
- * alone — a seed that disabled everything it did not recognise would undo
+ * alone — a seed that deleted everything it did not recognise would undo
  * that choice on every redeploy, silently.
  */
 const RETIRED: { provider: ProviderName; modelId: string }[] = [
@@ -118,16 +121,13 @@ async function main() {
   }
 
   for (const retired of RETIRED) {
-    const { count } = await prisma.modelConfig.updateMany({
-      where: {
-        provider: retired.provider,
-        modelId: retired.modelId,
-        enabled: true,
-      },
-      data: { enabled: false },
+    const { count } = await prisma.modelConfig.deleteMany({
+      where: { provider: retired.provider, modelId: retired.modelId },
     })
     if (count > 0) {
-      console.log(`ModelConfig disabled (retired): ${retired.provider}/${retired.modelId}`)
+      console.log(
+        `ModelConfig removed (retired): ${retired.provider}/${retired.modelId}`
+      )
     }
   }
 

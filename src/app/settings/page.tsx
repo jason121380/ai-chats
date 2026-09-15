@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { Loader2, Plus } from "lucide-react"
+import { Loader2, Plus, Trash2 } from "lucide-react"
 
 import { PageShell } from "@/components/layout/page-shell"
 import { AddModelDialog } from "@/components/models/add-model-dialog"
@@ -56,6 +56,10 @@ function ModelsTab() {
   const [models, setModels] = useState<ModelConfigDto[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
+  const [removing, setRemoving] = useState<string | null>(null)
+  // Separate from `error`: that one replaces the whole table, which is right
+  // for "the list would not load" and wrong for "one delete failed".
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const load = useCallback(() => {
     fetch("/api/models")
@@ -86,6 +90,32 @@ function ModelsTab() {
     if (res.ok) load()
   }
 
+  const remove = async (model: ModelConfigDto) => {
+    if (!window.confirm(t.settings.removeConfirm(model.displayName))) return
+    const key = `${model.provider}/${model.modelId}`
+    setRemoving(key)
+    setActionError(null)
+    try {
+      const res = await fetch("/api/models", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: model.provider,
+          modelId: model.modelId,
+        }),
+      })
+      if (!res.ok) throw new Error(t.settings.removeFailed)
+      // Drop it locally as well: load() is a round trip, and leaving the row
+      // on screen until it lands reads as "the click did nothing".
+      setModels((prev) => prev?.filter((m) => m.id !== model.id) ?? prev)
+      load()
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setRemoving(null)
+    }
+  }
+
   if (error) return <p className="text-sm text-red-500">{error}</p>
   if (!models) return <Loader2 className="h-5 w-5 animate-spin text-rose-brand" />
 
@@ -105,6 +135,9 @@ function ModelsTab() {
           new Set(models.map((m) => `${m.provider}/${m.modelId}`))
         }
       />
+      {actionError && (
+        <p className="text-sm text-red-500">{actionError}</p>
+      )}
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
       <Table>
         <TableHeader>
@@ -117,13 +150,14 @@ function ModelsTab() {
             <TableHead className="text-right">{t.settings.colMaxOutput}</TableHead>
             <TableHead>{t.settings.colPricing}</TableHead>
             <TableHead>{t.settings.colApiKey}</TableHead>
+            <TableHead className="w-10" />
           </TableRow>
         </TableHeader>
         <TableBody>
           {models.length === 0 && (
             <TableRow>
               <TableCell
-                colSpan={8}
+                colSpan={9}
                 className="text-center text-sm text-muted-foreground"
               >
                 {t.settings.noModels}
@@ -179,6 +213,22 @@ function ModelsTab() {
                 ) : (
                   <Badge variant="destructive">{t.settings.apiKeyMissing}</Badge>
                 )}
+              </TableCell>
+              <TableCell>
+                <button
+                  type="button"
+                  onClick={() => remove(m)}
+                  disabled={removing !== null}
+                  aria-label={`${t.settings.remove} ${m.displayName}`}
+                  title={t.settings.remove}
+                  className="text-gray-400 transition-colors hover:text-red-500 disabled:opacity-40"
+                >
+                  {removing === `${m.provider}/${m.modelId}` ? (
+                    <Loader2 size={15} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={15} />
+                  )}
+                </button>
               </TableCell>
             </TableRow>
           ))}

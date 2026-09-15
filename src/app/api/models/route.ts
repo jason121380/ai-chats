@@ -109,6 +109,39 @@ export async function POST(req: NextRequest) {
   }
 }
 
+const deleteSchema = z.object({
+  provider: z.string(),
+  modelId: z.string(),
+})
+
+/**
+ * Remove a model configuration.
+ *
+ * Safe for the ledger: ModelRun stores `provider` / `modelId` as plain
+ * columns with no foreign key to ModelConfig, and the usage and history
+ * pages read those columns directly. A deleted model's past calls keep
+ * their tokens, their price snapshot and their cost.
+ *
+ * ModelPricing rows are deliberately left behind. They are keyed by
+ * provider+modelId too, so re-adding the same model later finds its prices
+ * still in force instead of silently starting to record MISSING again.
+ */
+export async function DELETE(req: NextRequest) {
+  try {
+    const body = deleteSchema.parse(await req.json())
+    const { count } = await prisma.modelConfig.deleteMany({
+      where: {
+        provider: body.provider as ProviderName,
+        modelId: body.modelId,
+      },
+    })
+    if (count === 0) return jsonError(404, "Model config not found")
+    return NextResponse.json({ deleted: count })
+  } catch (err) {
+    return handleRouteError(err)
+  }
+}
+
 const updateSchema = z.object({
   provider: z.string(),
   modelId: z.string(),

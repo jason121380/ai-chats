@@ -202,6 +202,12 @@ export const t = {
     colMaxOutput: "最大輸出",
     colPricing: "價格",
     colApiKey: "API Key",
+    colActions: "",
+    remove: "移除",
+    removeConfirm: (name: string) =>
+      `確定要從清單移除「${name}」？已經跑過的呼叫與花費紀錄不受影響。`,
+    removing: "移除中…",
+    removeFailed: "移除失敗",
     pricingConfigured: "已設定",
     pricingMissing: "未設定",
     apiKeyPresent: "已提供",
