@@ -141,7 +141,8 @@ export async function runDiscussion(
               speaker.role,
               participantNames,
               round,
-              rounds
+              rounds,
+              transcript
             ),
             messages: [
               {
