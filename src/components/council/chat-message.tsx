@@ -52,6 +52,21 @@ function Avatar({
   )
 }
 
+/** Three bouncing dots. The only "still working" signal in the transcript. */
+function TypingDots({ className }: { className?: string }) {
+  return (
+    <span className={cn("flex gap-1", className)} aria-label={t.transcript.typing}>
+      {[0, 150, 300].map((delay) => (
+        <span
+          key={delay}
+          className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60"
+          style={{ animationDelay: `${delay}ms` }}
+        />
+      ))}
+    </span>
+  )
+}
+
 /** A participant's message in the transcript. */
 export function ChatMessage({
   run,
@@ -64,6 +79,10 @@ export function ChatMessage({
 }) {
   const style = speakerStyle(run.provider)
   const failed = run.status === "FAILED" || run.status === "TIMEOUT"
+  // A row exists from the moment the turn starts, with no response yet. Without
+  // this, "still generating" renders as「沒有回傳內容」— the message for a model
+  // that finished and said nothing, which is a different and much worse thing.
+  const inFlight = run.status === "PENDING" || run.status === "RUNNING"
   const time = run.completedAt ?? run.startedAt
 
   return (
@@ -114,6 +133,11 @@ export function ChatMessage({
               <div className="min-w-0 flex-1 px-3 py-2.5">
                 {run.response ? (
                   <Markdown>{run.response}</Markdown>
+                ) : inFlight ? (
+                  <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <TypingDots />
+                    {t.transcript.typing}
+                  </span>
                 ) : (
                   <p className="text-sm italic text-muted-foreground">
                     {t.transcript.noContent}
@@ -124,7 +148,7 @@ export function ChatMessage({
           </div>
         )}
 
-        {!failed && (
+        {!failed && !inFlight && (
           <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted-foreground">
             <span>{formatLatency(run.latencyMs)}</span>
             <span>
@@ -166,15 +190,7 @@ export function ChatTyping({
         <span className={cn("text-sm font-semibold opacity-70", style.name)}>
           {displayName}
         </span>
-        <span className="flex gap-1" aria-label="typing">
-          {[0, 150, 300].map((delay) => (
-            <span
-              key={delay}
-              className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60"
-              style={{ animationDelay: `${delay}ms` }}
-            />
-          ))}
-        </span>
+        <TypingDots />
       </div>
     </div>
   )
