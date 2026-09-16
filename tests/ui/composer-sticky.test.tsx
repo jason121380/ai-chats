@@ -16,7 +16,7 @@ import { DiscussionComposer } from "@/components/council/discussion-composer"
  */
 
 const CHAT_PAGES: readonly string[] = [
-  join(__dirname, "..", "..", "src", "app", "history", "[id]", "page.tsx"),
+  join(__dirname, "..", "..", "src", "app", "history", "[id]", "session-detail.tsx"),
   join(__dirname, "..", "..", "src", "app", "council", "page.tsx"),
 ]
 

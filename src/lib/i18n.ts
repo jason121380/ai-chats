@@ -266,7 +266,6 @@ export const t = {
     loadModels: "無法載入模型清單",
     loadSessions: "無法載入對話紀錄",
     loadSession: "無法載入這場對話",
-    stillLoading: "載入中，這次比平常久一些…",
     loadUsage: "無法載入用量資料",
     loadPricing: "無法載入價格資料",
     noEnabledModels: "沒有已啟用的模型。請到「設定」啟用模型並執行 seed。",

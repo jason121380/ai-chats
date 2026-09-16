@@ -17,7 +17,7 @@ import { describe, expect, it } from "vitest"
  */
 
 const POLLING_PAGES = [
-  join(__dirname, "..", "..", "src", "app", "history", "[id]", "page.tsx"),
+  join(__dirname, "..", "..", "src", "app", "history", "[id]", "session-detail.tsx"),
   join(__dirname, "..", "..", "src", "app", "council", "page.tsx"),
 ]
 

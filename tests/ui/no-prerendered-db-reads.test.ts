@@ -38,12 +38,17 @@ function walk(dir: string): string[] {
   return out
 }
 
-/** Reaches the database, directly or through a server module that does. */
+/**
+ * Reaches the database, directly or through a server module that does.
+ *
+ * Any import from @/server is server-side work, and in this codebase that
+ * means Prisma sooner or later. Naming specific modules meant a page that
+ * reached the database through a NEW one — which is what happened when the
+ * session detail moved to a server component — was not covered by the guard
+ * at all.
+ */
 function readsDatabase(source: string): boolean {
-  return (
-    source.includes("@/server/db/prisma") ||
-    /from "@\/server\/usage\/currency"/.test(source)
-  )
+  return /from "@\/server\//.test(source)
 }
 
 function optsOutOfPrerender(source: string): boolean {
