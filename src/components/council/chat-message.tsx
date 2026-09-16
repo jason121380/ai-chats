@@ -9,6 +9,7 @@ import { formatTime, t } from "@/lib/i18n"
 import { ROLE_LABELS, type ModelRunDto } from "@/types/api"
 import { PROVIDER_MARKS, ProviderMarkIcon } from "./provider-marks"
 import { speakerInitials, speakerStyle } from "./speaker"
+import { useTypedText } from "./use-typed-text"
 
 function Avatar({
   name,
@@ -86,6 +87,9 @@ export function ChatMessage({
   // that finished and said nothing, which is a different and much worse thing.
   const inFlight = run.status === "PENDING" || run.status === "RUNNING"
   const time = run.completedAt ?? run.startedAt
+  // Streamed text arrives in blocks the size of one poll. Shown raw it reads
+  // as "a paragraph appeared"; this paces it out into something being typed.
+  const body = useTypedText(run.response ?? "", inFlight)
 
   return (
     // Telegram's incoming-message shape: avatar at the bottom-left of the
@@ -130,13 +134,13 @@ export function ChatMessage({
                     {ROLE_LABELS[run.role] ?? run.role}
                   </span>
                 </div>
-                {run.response ? (
+                {body ? (
                   // While the turn is still streaming this is the text so
                   // far, so it gets a caret: the difference between "this is
                   // the answer" and "this is the answer so far" is the whole
                   // reason to show it early.
                   <div className={cn(inFlight && "streaming")}>
-                    <Markdown>{run.response}</Markdown>
+                    <Markdown>{body}</Markdown>
                   </div>
                 ) : inFlight ? (
                   // Dots only until the first character arrives. After that

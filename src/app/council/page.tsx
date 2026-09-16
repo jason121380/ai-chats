@@ -80,7 +80,10 @@ export default function CouncilPage() {
   useEffect(() => {
     if (!runId) return
     void refresh(runId)
-    const interval = setInterval(() => void refresh(runId), 2000)
+    // One second, not two: the poll interval is how often the streamed text
+    // reaches the browser, and the reveal above drains its buffer faster than
+    // that — a longer gap shows as a pause between blocks.
+    const interval = setInterval(() => void refresh(runId), 1000)
 
     const es = new EventSource(`/api/council/${runId}/stream`)
     esRef.current = es
