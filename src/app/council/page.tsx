@@ -68,12 +68,22 @@ export default function CouncilPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [models])
 
+  // One request at a time. The interval fires on a schedule, not on
+  // completion, and the SSE listener below calls this too — on a slow
+  // connection that stacks several identical reads of the same run, each
+  // queued behind the last.
+  const inFlight = useRef(false)
+
   const refresh = useCallback(async (id: string) => {
+    if (inFlight.current) return
+    inFlight.current = true
     try {
       const res = await fetch(`/api/council/${id}`)
       if (res.ok) setRun((await res.json()) as CouncilRunDto)
     } catch {
       // transient — polling continues
+    } finally {
+      inFlight.current = false
     }
   }, [])
 
@@ -83,7 +93,12 @@ export default function CouncilPage() {
     // One second, not two: the poll interval is how often the streamed text
     // reaches the browser, and the reveal above drains its buffer faster than
     // that — a longer gap shows as a pause between blocks.
-    const interval = setInterval(() => void refresh(runId), 1000)
+    const interval = setInterval(() => {
+      // A backgrounded phone browser should not spend data on a request a
+      // second for a screen nobody is looking at.
+      if (document.hidden) return
+      void refresh(runId)
+    }, 1000)
 
     const es = new EventSource(`/api/council/${runId}/stream`)
     esRef.current = es

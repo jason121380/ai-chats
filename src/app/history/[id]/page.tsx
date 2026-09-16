@@ -39,10 +39,23 @@ export default function SessionDetailPage() {
   const [costOpen, setCostOpen] = useState(false)
   const bottomRef = useRef<HTMLDivElement | null>(null)
 
+  // One request at a time. setInterval fires on a schedule, not on
+  // completion, so on a slow connection — where a fetch takes longer than the
+  // interval — ticks stack up: several identical requests in flight at once,
+  // each re-reading the whole session, all of them queued behind each other
+  // on the same connection. The load gets slower the slower it already was.
+  const inFlight = useRef(false)
+
   const load = useCallback(async (id: string) => {
-    const res = await fetch(`/api/sessions/${id}`)
-    if (!res.ok) throw new Error(t.errors.loadSession)
-    setSession((await res.json()) as SessionDetailDto)
+    if (inFlight.current) return
+    inFlight.current = true
+    try {
+      const res = await fetch(`/api/sessions/${id}`)
+      if (!res.ok) throw new Error(t.errors.loadSession)
+      setSession((await res.json()) as SessionDetailDto)
+    } finally {
+      inFlight.current = false
+    }
   }, [])
 
   useEffect(() => {
@@ -51,6 +64,15 @@ export default function SessionDetailPage() {
       setError(err instanceof Error ? err.message : String(err))
     )
   }, [params?.id, load])
+
+  // A spinner that has been turning for ten seconds and one that will turn
+  // forever look the same. After a few seconds, say so.
+  const [slow, setSlow] = useState(false)
+  useEffect(() => {
+    if (session) return
+    const timer = setTimeout(() => setSlow(true), 6000)
+    return () => clearTimeout(timer)
+  }, [session])
 
   const active = useMemo(
     () =>
@@ -70,11 +92,23 @@ export default function SessionDetailPage() {
     const id = params?.id
     if (!id || !active) return
     const interval = setInterval(() => {
+      // Nothing to watch on a screen nobody is looking at, and a phone with
+      // the browser in the background should not be spending its data on a
+      // request a second.
+      if (document.hidden) return
       load(id).catch(() => {
         // transient — the next tick tries again
       })
     }, 1000)
-    return () => clearInterval(interval)
+    // Catch up the moment it comes back, rather than at the next tick.
+    const onVisible = () => {
+      if (!document.hidden) void load(id).catch(() => {})
+    }
+    document.addEventListener("visibilitychange", onVisible)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener("visibilitychange", onVisible)
+    }
   }, [params?.id, active, load])
 
   useEffect(() => {
@@ -129,7 +163,14 @@ export default function SessionDetailPage() {
 
   if (error) return <p className="text-sm text-red-500">{error}</p>
   if (!session) {
-    return <Loader2 className="h-5 w-5 animate-spin text-rose-brand" />
+    return (
+      <div className="flex items-center gap-3">
+        <Loader2 className="h-5 w-5 shrink-0 animate-spin text-rose-brand" />
+        {slow && (
+          <p className="text-sm text-gray-400">{t.errors.stillLoading}</p>
+        )}
+      </div>
+    )
   }
 
   const isDiscussion = runs.length > 0
