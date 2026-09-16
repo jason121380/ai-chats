@@ -230,7 +230,7 @@ export default function SessionDetailPage() {
     // to travel to. The subtracted values are the header (h-14) plus this
     // main element's own padding (p-4 / md:p-8); a test pins them to the
     // shell so a change there cannot quietly leave a scrolling page behind.
-    <div className="mx-auto flex h-[calc(100dvh-5.5rem)] max-w-3xl flex-col md:h-[calc(100dvh-7.5rem)]">
+    <div className="mx-auto flex h-chat-screen max-w-3xl flex-col">
       {/* Two lines of chrome, not five. Everything else that used to live up
           here — status, kind, tokens, cost — is either a word in the meta
           line or behind one of the two icons. */}

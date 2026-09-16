@@ -101,7 +101,10 @@ describe("the composer stays on screen", () => {
    */
   it("history: the transcript is the only thing that scrolls", () => {
     const source = readFileSync(CHAT_PAGES[0] as string, "utf8")
-    expect(source).toMatch(/h-\[calc\(100dvh-/)
+    // The height is a named class in globals.css rather than an inline
+    // calc, because it needs a `vh` fallback line underneath the `dvh` one —
+    // see .h-chat-screen there.
+    expect(source).toContain("h-chat-screen")
     const scroller = source
       .split("\n")
       .find((l) => l.includes("overflow-y-auto") && l.includes("flex-1"))

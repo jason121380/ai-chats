@@ -68,7 +68,7 @@ export default async function RootLayout({
       <body className="antialiased">
         <CurrencyProvider value={currency}>
           <AdminShellProvider>
-            <div className="min-h-screen bg-background">
+            <div className="min-h-app bg-background">
               <Sidebar />
               <ShellMain>{children}</ShellMain>
             </div>

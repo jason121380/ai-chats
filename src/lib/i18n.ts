@@ -66,8 +66,6 @@ export const t = {
   discussion: {
     join: "加入討論",
     resume: "接著討論",
-    composerHint: "插話…（目前這位講完後，下一位會回應你）",
-    composerContinue: "接著說…（送出後與會者會回來再討論一輪）",
     continueHint: "送出會重開這場討論，與會者各再發言一次並重寫總結。",
     composerClosed: "討論已結束，無法再發言。",
     summary: "會議總結",

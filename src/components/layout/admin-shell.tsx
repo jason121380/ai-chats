@@ -16,7 +16,7 @@ export function ShellMain({ children }: { children: ReactNode }) {
   return (
     <div
       className={cn(
-        "flex min-h-screen min-w-0 flex-col transition-[margin] duration-200 ease-out",
+        "flex min-h-app min-w-0 flex-col transition-[margin] duration-200 ease-out",
         collapsed ? "md:ml-0" : "md:ml-sidebar"
       )}
     >

@@ -14,9 +14,9 @@ import { t } from "@/lib/i18n"
  * Two things can happen when it is used, and which one is not a mode the
  * person picks — it follows from whether the meeting is still sitting:
  *
- *   running  → /say stores the message and the loop reads it between turns.
- *              The delay is deliberate and the placeholder says so: someone
- *              typing mid-turn should expect the speaker to finish.
+ *   running  → /say stores the message and the loop reads it between turns,
+ *              so a person typing mid-turn joins after the current speaker
+ *              finishes rather than cutting into them.
  *   finished → /continue puts the participants back in the room for another
  *              round with the message already at the head of it.
  *
@@ -86,13 +86,12 @@ export function DiscussionComposer({
         <Textarea
           rows={1}
           className="min-h-[42px] flex-1"
-          placeholder={
-            disabled
-              ? t.discussion.composerClosed
-              : continuing
-                ? t.discussion.composerContinue
-                : t.discussion.composerHint
-          }
+          // Empty while the box is usable. The placeholder said the same
+          // thing as the line under it, and at phone width it was too long
+          // to finish — a sentence cut off mid-word inside the input is
+          // worse than no sentence at all. The closed state keeps its text
+          // because there the box explains why it cannot be used.
+          placeholder={disabled ? t.discussion.composerClosed : ""}
           value={value}
           disabled={disabled || sending}
           onChange={(e) => setValue(e.target.value)}

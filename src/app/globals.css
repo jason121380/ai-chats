@@ -167,3 +167,42 @@
     animation: none;
   }
 }
+
+/*
+ * Viewport heights that match what the phone is actually showing.
+ *
+ * `100vh` on a mobile browser is the LARGE viewport — the height the page
+ * would have if the address bar and toolbar were hidden. It is bigger than
+ * what you can see. So a shell at `min-height: 100vh` is taller than the
+ * screen by exactly the height of the browser chrome, the document scrolls,
+ * and anything positioned against the viewport bottom sits above a band of
+ * blank space the size of that chrome.
+ *
+ * `100dvh` is the viewport as it currently stands, chrome included. The
+ * `vh` line stays as the fallback: a browser that does not understand `dvh`
+ * drops the second declaration and keeps the first, which is wrong by the
+ * chrome height but is at least a height. Losing the declaration entirely
+ * would collapse the chat screen back to a scrolling document.
+ *
+ * Desktop never showed this: there vh and dvh are the same number, which is
+ * also why it survived being measured in a headless browser.
+ */
+.min-h-app {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* The space left for a chat screen: the viewport minus the app header
+   (3.5rem) and the main element's own padding (1rem top and bottom). */
+.h-chat-screen {
+  height: calc(100vh - 5.5rem);
+  height: calc(100dvh - 5.5rem);
+}
+
+@media (min-width: 768px) {
+  /* md: main's padding grows to 2rem. */
+  .h-chat-screen {
+    height: calc(100vh - 7.5rem);
+    height: calc(100dvh - 7.5rem);
+  }
+}
