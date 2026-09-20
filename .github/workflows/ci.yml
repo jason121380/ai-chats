@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A second push to the same branch makes the first run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # A real Postgres, because a good part of this suite talks to one and
+    # there is no skip-when-absent path: without a database those tests fail
+    # rather than opt out. Skipping them would have been the cheaper CI and
+    # the weaker one — the ledger, the backfill and the discussion loop are
+    # exactly the code worth running against a real database.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci
+      APP_SECRET: ci-placeholder-secret
+      NODE_ENV: test
+      # No provider keys are set, deliberately. Nothing here should reach a
+      # paid API, and leaving the keys absent means a test that tried would
+      # fail loudly rather than quietly spend money — CI cannot bill anyone
+      # even if someone writes a test that tries.
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Generated into node_modules, which npm ci does not restore; every
+      # step after this imports it.
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      # `next build` imports route modules, and those validate the
+      # environment at import time — hence the placeholders above. It
+      # connects to nothing.
+      - name: Build
+        run: npx next build
