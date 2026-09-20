@@ -29,8 +29,14 @@ jobs:
           POSTGRES_PASSWORD: ci
           POSTGRES_DB: ci
         ports: ["5432:5432"]
+        # `pg_isready` alone answers "ready" as long as the server replies at
+        # all — including with `FATAL: role "root" does not exist`, which is
+        # what it got without these flags. A check that passes whatever the
+        # state of the role and database it is supposed to be checking is not
+        # a check; name them explicitly so a broken one fails the wait here
+        # rather than the migration step later.
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U ci -d ci"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -47,9 +53,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 22, because that is what the dependency tree actually requires:
+      # jsdom declares `^22.22.2 || ^24.15.0 || >=26.0.0` and the undici it
+      # pulls in calls `markAsUncloneable`, which `node:worker_threads` does
+      # not export before 22. On 20 that surfaces as a TypeError from inside
+      # node_modules while the suite is still loading, which reads like a
+      # broken dependency rather than a wrong runtime.
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - run: npm ci
