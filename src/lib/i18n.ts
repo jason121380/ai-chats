@@ -255,6 +255,17 @@ export const t = {
     noPricing: "尚未設定價格。可透過 seed 或 POST /api/pricing 新增。",
   },
 
+  unlock: {
+    title: "需要通行密鑰",
+    subtitle: "這個部署會呼叫付費模型，也保存過往對話，所以先驗證再進入。",
+    label: "APP_SECRET",
+    placeholder: "貼上密鑰",
+    submit: "解鎖",
+    submitting: "驗證中…",
+    failed: "密鑰不正確。",
+    unavailable: "伺服器尚未設定 APP_SECRET。",
+  },
+
   errors: {
     enterQuestion: "請先輸入問題。",
     selectModel: "請至少選擇一個模型。",
