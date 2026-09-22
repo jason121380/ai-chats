@@ -30,6 +30,20 @@ export interface OpenRouterProviderOptions {
  *
  * `X-OpenRouter-Title` is optional attribution for OpenRouter's rankings.
  */
+
+/**
+ * Sent whenever 設定 has no 最大輸出 for the model.
+ *
+ * OpenRouter reserves credit for the worst case before it forwards a
+ * request: max_tokens × the output rate. With no max_tokens it assumes the
+ * model's own ceiling — 65,536 for a Gemini, 128,000 for a GPT — and a
+ * balance that cannot cover that is refused with a 402 before a single
+ * token is generated. Seen in production: "You requested up to 65536
+ * tokens, but can only afford 800." An explicit cap keeps the reservation
+ * proportionate to an answer, and bounds what one turn can cost.
+ */
+const DEFAULT_MAX_OUTPUT_TOKENS = 8192
+
 export class OpenRouterProvider implements AIProvider {
   readonly provider = "OPENROUTER" as const
 
@@ -49,11 +63,18 @@ export class OpenRouterProvider implements AIProvider {
     }
   }
 
+  private capped(request: AIRequest): AIRequest {
+    return {
+      ...request,
+      maxOutputTokens: request.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
+    }
+  }
+
   async generate(request: AIRequest): Promise<AIResponse> {
-    return generateOpenAICompatible(request, this.opts())
+    return generateOpenAICompatible(this.capped(request), this.opts())
   }
 
   stream(request: AIRequest): AsyncIterable<AIStreamEvent> {
-    return streamOpenAICompatible(request, this.opts())
+    return streamOpenAICompatible(this.capped(request), this.opts())
   }
 }
