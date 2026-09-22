@@ -15,6 +15,7 @@ import {
   type PendingSpeaker,
 } from "@/components/council/chat-transcript"
 import { DiscussionComposer } from "@/components/council/discussion-composer"
+import { StopRunButton } from "@/components/council/stop-run-button"
 import { Markdown } from "@/components/ui/markdown"
 import {
   ChairmanPicker,
@@ -396,6 +397,12 @@ export default function CouncilPage() {
               <span className="text-sm text-destructive">
                 {run.errorMessage}
               </span>
+            )}
+            {!TERMINAL.includes(run.status) && (
+              <StopRunButton
+                runId={run.id}
+                onStopped={() => void refresh(run.id)}
+              />
             )}
           </div>
 

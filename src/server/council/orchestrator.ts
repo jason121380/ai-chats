@@ -218,27 +218,84 @@ const NON_TERMINAL = [
   "DISCUSSING",
 ] as const
 
+export const INTERRUPTED_ERROR_CODE = "INTERRUPTED"
+
+const INTERRUPTED_MESSAGE =
+  "這則發言在寫完之前就中斷了（伺服器重啟或討論被手動結束）。"
+
+/**
+ * Close out model runs that no process is driving any more.
+ *
+ * A turn writes its partial text to `response` every 400ms while it streams,
+ * and the row only becomes COMPLETED when the stream finishes. Kill the
+ * process mid-stream and the row keeps `status = RUNNING` with a few
+ * characters in it forever — which the transcript renders as a speaker who
+ * is still typing, months later. Marking it FAILED is what turns that into
+ * what it actually is: a turn that did not finish.
+ *
+ * The partial text is deliberately left in `response`. It is evidence of how
+ * far the turn got, and nothing downstream can mistake it for an answer: the
+ * transcript branches on the failed status before it looks at the text, and
+ * a resumed discussion loads COMPLETED turns only.
+ */
+export async function failInterruptedModelRuns(
+  db: PrismaClient,
+  where: { councilRunId: string } | { startedBefore: Date }
+): Promise<number> {
+  const scope =
+    "councilRunId" in where
+      ? { councilRunId: where.councilRunId }
+      : {
+          OR: [
+            { startedAt: { lt: where.startedBefore } },
+            { startedAt: null, createdAt: { lt: where.startedBefore } },
+          ],
+        }
+
+  const result = await db.modelRun.updateMany({
+    where: { status: { in: ["PENDING", "RUNNING"] }, ...scope },
+    data: {
+      status: "FAILED",
+      completedAt: new Date(),
+      errorCode: INTERRUPTED_ERROR_CODE,
+      errorMessage: INTERRUPTED_MESSAGE,
+    },
+  })
+  return result.count
+}
+
 /**
  * Stale-run recovery: council execution is in-process (no durable queue), so
  * a container restart can strand a run in a non-terminal state. Any such run
- * whose last update is older than COUNCIL_STALE_AFTER_MS is marked FAILED.
+ * whose last update is older than COUNCIL_STALE_AFTER_MS is marked FAILED,
+ * and so is every model run left mid-flight — a council marked FAILED above
+ * a turn still showing a typing caret is a worse lie than either alone.
+ *
+ * Model runs are swept by their own age rather than by their council, so a
+ * solo or compare call stranded by the same restart is closed out too. The
+ * margin is wide: a live call is bounded by PROVIDER_TIMEOUT_MS, two minutes
+ * by default, against a fifteen-minute staleness window.
+ *
  * Call before reading runs.
  */
-export async function markStaleCouncilRuns(
+export async function markStaleRuns(
   db: PrismaClient,
   staleAfterMs = getEnv().COUNCIL_STALE_AFTER_MS
 ): Promise<number> {
   const cutoff = new Date(Date.now() - staleAfterMs)
-  const result = await db.councilRun.updateMany({
-    where: {
-      status: { in: [...NON_TERMINAL] },
-      updatedAt: { lt: cutoff },
-    },
-    data: {
-      status: "FAILED",
-      errorMessage:
-        "Run became stale (likely interrupted by a server restart) and was marked FAILED.",
-    },
-  })
-  return result.count
+  const [runs] = await Promise.all([
+    db.councilRun.updateMany({
+      where: {
+        status: { in: [...NON_TERMINAL] },
+        updatedAt: { lt: cutoff },
+      },
+      data: {
+        status: "FAILED",
+        errorMessage:
+          "Run became stale (likely interrupted by a server restart) and was marked FAILED.",
+      },
+    }),
+    failInterruptedModelRuns(db, { startedBefore: cutoff }),
+  ])
+  return runs.count
 }

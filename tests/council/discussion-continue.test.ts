@@ -252,3 +252,84 @@ describe("continuing a finished discussion", () => {
     expect(runs).toHaveLength(1)
   })
 })
+
+/**
+ * Ending a meeting from the UI has to reach a loop that is genuinely still
+ * running, not only one already stranded. The loop checks for a terminal
+ * status between turns; without that check the stop would write a status
+ * that the very next turn overwrites, and the button would look broken in
+ * exactly the case where a person is most likely to press it twice.
+ */
+describe("a discussion ended while it is still running", () => {
+  it("stops between turns instead of finishing the round", async () => {
+    const question = "Should we expand?"
+    const session = await db.session.create({
+      data: { title: question, mode: "DISCUSSION" },
+    })
+    sessionIds.push(session.id)
+    const message = await db.message.create({
+      data: {
+        sessionId: session.id,
+        role: "USER",
+        source: "USER",
+        content: question,
+      },
+    })
+    const run = await db.councilRun.create({
+      data: {
+        sessionId: session.id,
+        userMessageId: message.id,
+        kind: "DISCUSSION",
+        totalRounds: 3,
+      },
+    })
+
+    let turns = 0
+    const reg = new ProviderRegistry()
+    const generate = async (req: AIRequest): Promise<AIResponse> => {
+      turns += 1
+      // The person presses 結束討論 while this turn is in flight.
+      await db.councilRun.update({
+        where: { id: run.id },
+        data: { status: "FAILED", errorMessage: "stopped by hand" },
+      })
+      return {
+        content: `${req.model} 說話`,
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+          cachedInputTokens: null,
+          reasoningTokens: null,
+          rawUsage: {},
+        },
+        finishReason: "stop",
+      }
+    }
+    for (const provider of Object.keys(MODELS)) {
+      reg.register({ provider: provider as ProviderName, generate })
+    }
+
+    await runDiscussion(
+      {
+        runId: run.id,
+        sessionId: session.id,
+        question,
+        participants,
+        rounds: 3,
+        style: "COLLABORATIVE",
+        summarizer: null,
+      },
+      { db, registry: reg }
+    )
+
+    // One turn ran; the loop saw the terminal status before starting another,
+    // and left the status the stop had written rather than finalizing over it.
+    expect(turns).toBe(1)
+    const after = await db.councilRun.findUniqueOrThrow({
+      where: { id: run.id },
+    })
+    expect(after.status).toBe("FAILED")
+    expect(after.errorMessage).toBe("stopped by hand")
+  })
+})

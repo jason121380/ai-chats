@@ -125,6 +125,13 @@ export async function runDiscussion(
       })
 
       for (const speaker of speakers) {
+        // Someone may have ended the meeting from the UI while the previous
+        // turn was running. Checked between turns, where an interjection is
+        // picked up, because that is the only point at which the floor is
+        // free — and checked at all because otherwise the stop button would
+        // set a status this loop overwrites with the next turn.
+        if (await runWasEnded(db, config.runId)) return
+
         // Pick up anything the person typed since the previous turn ended.
         // Polled here rather than pushed because the floor is the invariant:
         // an interjection joins the transcript BETWEEN turns, never in the
@@ -341,6 +348,29 @@ export async function runDiscussion(
       error: message,
     })
   }
+}
+
+const TERMINAL_STATUSES: string[] = [
+  "COMPLETED",
+  "PARTIAL",
+  "FAILED",
+  "CANCELLED",
+]
+
+/**
+ * Has this run been brought to an end by something other than this loop?
+ *
+ * One read per turn, against a model call that takes seconds, so the cost is
+ * nothing. It is what makes 結束討論 take effect on a meeting that is really
+ * still running: without it the button would write a status that the very
+ * next turn overwrites.
+ */
+async function runWasEnded(db: PrismaClient, runId: string): Promise<boolean> {
+  const run = await db.councilRun.findUnique({
+    where: { id: runId },
+    select: { status: true },
+  })
+  return run === null || TERMINAL_STATUSES.includes(run.status)
 }
 
 /**
