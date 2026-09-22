@@ -20,15 +20,11 @@ export const t = {
     history: "歷史紀錄",
     usage: "用量",
     settings: "設定",
-    councilHint: "各自回答 · 獨立分析 → 匿名互評 → 主席裁決",
-    discussionHint: "群組聊天 · 全員同場輪流發言",
   },
 
   mode: {
     council: "各自回答",
-    councilHint: "先各自獨立分析，再匿名互評。避免互相影響。",
     discussion: "群組聊天",
-    discussionHint: "全員在同一個房間輪流發言，看得到彼此並互相回應。",
   },
 
   council: {

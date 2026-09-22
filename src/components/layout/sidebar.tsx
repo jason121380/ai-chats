@@ -69,7 +69,7 @@ export function Sidebar() {
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <nav className="flex-1 overflow-y-auto px-3 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
             主選單
           </p>
@@ -111,13 +111,6 @@ export function Sidebar() {
             })}
           </div>
         </nav>
-
-        <div className="flex-shrink-0 border-t border-gray-100 px-3 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <div className="space-y-1 px-3 text-xs leading-relaxed text-gray-400">
-            <p>{t.nav.councilHint}</p>
-            <p>{t.nav.discussionHint}</p>
-          </div>
-        </div>
       </aside>
     </>
   )
