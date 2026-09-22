@@ -10,6 +10,7 @@ export const PROVIDER_NAMES = [
   "XAI",
   "MUSE",
   "SPARK",
+  "OPENROUTER",
 ] as const
 
 export type ProviderName = (typeof PROVIDER_NAMES)[number]

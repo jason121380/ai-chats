@@ -7,6 +7,7 @@ import { cn, formatLatency, formatTokens } from "@/lib/utils"
 import { useMoney } from "@/components/layout/currency-context"
 import { formatTime, t } from "@/lib/i18n"
 import { ROLE_LABELS, type ModelRunDto } from "@/types/api"
+import { vendorOf } from "@/lib/vendor"
 import { PROVIDER_MARKS, ProviderMarkIcon } from "./provider-marks"
 import { speakerInitials, speakerStyle } from "./speaker"
 import { useTypedText } from "./use-typed-text"
@@ -14,14 +15,18 @@ import { useTypedText } from "./use-typed-text"
 function Avatar({
   name,
   provider,
+  modelId,
   className,
 }: {
   name: string
   provider: string
+  modelId: string
   className?: string
 }) {
-  const mark = PROVIDER_MARKS[provider]
-  const style = speakerStyle(provider)
+  // The mark is the vendor's, which for a gateway lives in the model ID.
+  const vendor = vendorOf(provider, modelId)
+  const mark = PROVIDER_MARKS[vendor]
+  const style = speakerStyle(provider, modelId)
 
   // Initials are the fallback, not the design: a provider we have no mark for
   // still needs an avatar that tells it apart from the others.
@@ -49,7 +54,7 @@ function Avatar({
       style={{ backgroundColor: mark.bg }}
       title={mark.label}
     >
-      <ProviderMarkIcon provider={provider} className="h-[18px] w-[18px]" />
+      <ProviderMarkIcon provider={vendor} className="h-[18px] w-[18px]" />
     </div>
   )
 }
@@ -80,7 +85,7 @@ export function ChatMessage({
   highlight?: boolean
 }) {
   const money = useMoney()
-  const style = speakerStyle(run.provider)
+  const style = speakerStyle(run.provider, run.modelId)
   const failed = run.status === "FAILED" || run.status === "TIMEOUT"
   // A row exists from the moment the turn starts, with no response yet. Without
   // this, "still generating" renders as「沒有回傳內容」— the message for a model
@@ -96,7 +101,11 @@ export function ChatMessage({
     // bubble, name in the speaker's colour inside the bubble, timestamp
     // tucked into the bottom-right corner instead of sitting on its own row.
     <div className="flex items-end gap-2">
-      <Avatar name={displayName} provider={run.provider} />
+      <Avatar
+        name={displayName}
+        provider={run.provider}
+        modelId={run.modelId}
+      />
       <div className="min-w-0 max-w-[85%]">
         {failed ? (
           <div className="flex items-start gap-2 rounded-2xl rounded-bl-md border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive">
@@ -203,16 +212,19 @@ export function ChatMessage({
 export function ChatTyping({
   displayName,
   provider,
+  modelId,
 }: {
   displayName: string
   provider: string
+  modelId: string
 }) {
-  const style = speakerStyle(provider)
+  const style = speakerStyle(provider, modelId)
   return (
     <div className="flex items-center gap-3">
       <Avatar
         name={displayName}
         provider={provider}
+        modelId={modelId}
         className="opacity-60"
       />
       <div className="flex items-center gap-2">

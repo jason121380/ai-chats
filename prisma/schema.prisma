@@ -50,6 +50,10 @@ enum ProviderName {
   XAI
   MUSE
   SPARK
+  /// One key, every vendor: modelId is an OpenRouter slug such as
+  /// `anthropic/claude-sonnet-4.5`. Kept distinct from the direct providers
+  /// because its prices and token counts are OpenRouter's, not the vendor's.
+  OPENROUTER
 }
 
 enum CouncilRunStatus {

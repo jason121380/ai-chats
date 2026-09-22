@@ -4,6 +4,7 @@ import { OpenAIProvider } from "@/server/ai/providers/openai"
 import { AnthropicProvider } from "@/server/ai/providers/anthropic"
 import { GeminiProvider } from "@/server/ai/providers/gemini"
 import { XAIProvider } from "@/server/ai/providers/xai"
+import { OpenRouterProvider } from "@/server/ai/providers/openrouter"
 import { ProviderError } from "@/server/ai/types"
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -215,5 +216,94 @@ describe("GeminiProvider", () => {
     await expect(provider.generate(request)).rejects.toBeInstanceOf(
       ProviderError
     )
+  })
+})
+
+describe("OpenRouterProvider", () => {
+  it("targets OpenRouter with attribution, and keeps its cost and upstream vendor", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(
+      jsonResponse({
+        id: "gen-abc",
+        model: "anthropic/claude-sonnet-4.5",
+        provider: "Anthropic",
+        choices: [{ message: { content: "Via OpenRouter" }, finish_reason: "stop" }],
+        usage: {
+          prompt_tokens: 194,
+          completion_tokens: 2,
+          total_tokens: 196,
+          cost: 0.00095,
+          cost_details: { upstream_inference_cost: 0.0009 },
+          prompt_tokens_details: { cached_tokens: 50, cache_write_tokens: 100 },
+          completion_tokens_details: { reasoning_tokens: 0 },
+        },
+      })
+    )
+    const provider = new OpenRouterProvider({ apiKey: "or-test", fetchFn })
+    const res = await provider.generate(request)
+
+    expect(res.content).toBe("Via OpenRouter")
+    expect(res.providerRequestId).toBe("gen-abc")
+    expect(res.usage.inputTokens).toBe(194)
+    expect(res.usage.outputTokens).toBe(2)
+    expect(res.usage.cachedInputTokens).toBe(50)
+    // What OpenRouter actually charged is kept verbatim for reconciliation;
+    // the ledger's own cost is still tokens × the snapshotted price.
+    expect((res.usage.rawUsage as { cost: number }).cost).toBe(0.00095)
+    // Which upstream served the slug that day is part of the audit trail.
+    expect(res.metadata).toEqual({
+      model: "anthropic/claude-sonnet-4.5",
+      upstreamProvider: "Anthropic",
+    })
+
+    const [url, init] = fetchFn.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe("https://openrouter.ai/api/v1/chat/completions")
+    const headers = init.headers as Record<string, string>
+    expect(headers.Authorization).toBe("Bearer or-test")
+    expect(headers["X-OpenRouter-Title"]).toBe("AI Council")
+    const body = JSON.parse(init.body as string)
+    expect(body.max_tokens).toBe(256)
+    // Usage is always attached by OpenRouter; nothing is requested for it.
+    expect(body.usage).toBeUndefined()
+  })
+
+  it("treats an error payload inside a 200 as the failure it is", async () => {
+    // OpenRouter has already sent the status line when an upstream fails, so
+    // the failure comes back as a body. Reading it as "no choices" would be
+    // wrong, and reading it as success would bill half an answer.
+    const fetchFn = vi.fn().mockResolvedValue(
+      jsonResponse({
+        error: { code: 429, message: "Provider rate limited" },
+      })
+    )
+    const provider = new OpenRouterProvider({ apiKey: "or-test", fetchFn })
+    await expect(provider.generate(request)).rejects.toMatchObject({
+      name: "ProviderError",
+      code: "RATE_LIMITED",
+      retryable: true,
+      httpStatus: 429,
+    })
+  })
+
+  it("does not retry an in-body error with no usable code", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(
+      jsonResponse({ error: { message: "Moderation flagged the input" } })
+    )
+    const provider = new OpenRouterProvider({ apiKey: "or-test", fetchFn })
+    await expect(provider.generate(request)).rejects.toMatchObject({
+      code: "UNKNOWN",
+      retryable: false,
+    })
+  })
+
+  it("maps 402 (out of credits) to a non-retryable request error", async () => {
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValue(new Response("Insufficient credits", { status: 402 }))
+    const provider = new OpenRouterProvider({ apiKey: "or-test", fetchFn })
+    await expect(provider.generate(request)).rejects.toMatchObject({
+      code: "INVALID_REQUEST",
+      retryable: false,
+      httpStatus: 402,
+    })
   })
 })

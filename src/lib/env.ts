@@ -13,6 +13,7 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   GOOGLE_AI_API_KEY: z.string().optional(),
   XAI_API_KEY: z.string().optional(),
+  OPENROUTER_API_KEY: z.string().optional(),
 
   /**
    * The shared secret that guards the whole deployment. Optional in

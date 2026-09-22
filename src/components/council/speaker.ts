@@ -1,5 +1,7 @@
 /** Visual identity for each participant in the chat transcript. */
 
+import { vendorOf } from "@/lib/vendor"
+
 export interface SpeakerStyle {
   /** Avatar background + text */
   avatar: string
@@ -48,8 +50,13 @@ const FALLBACK: SpeakerStyle = {
   name: "text-zinc-700 dark:text-zinc-300",
 }
 
-export function speakerStyle(provider: string): SpeakerStyle {
-  return PROVIDER_STYLES[provider] ?? FALLBACK
+/**
+ * Keyed by the VENDOR, not the configured provider: four models routed
+ * through OpenRouter are four different speakers and must not share one
+ * colour. The model ID carries the vendor for those.
+ */
+export function speakerStyle(provider: string, modelId = ""): SpeakerStyle {
+  return PROVIDER_STYLES[vendorOf(provider, modelId)] ?? FALLBACK
 }
 
 /**

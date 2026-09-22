@@ -200,3 +200,65 @@ describe("collecting a stream", () => {
     )
   })
 })
+
+describe("a gateway that fails after the stream has opened", () => {
+  const request = {
+    model: "anthropic/claude-sonnet-4.5",
+    messages: [{ role: "user" as const, content: "Hi" }],
+  }
+
+  it("skips OpenRouter's keep-alive comments", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(
+        bodyOf([
+          ": OPENROUTER PROCESSING\n\n",
+          'data: {"id":"gen-1","choices":[{"delta":{"content":"Hi"}}]}\n\n',
+          ": OPENROUTER PROCESSING\n\n",
+          'data: {"id":"gen-1","choices":[{"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":3,"completion_tokens":1,"cost":0.00001}}\n\n',
+          "data: [DONE]\n\n",
+        ]),
+        { status: 200 }
+      )
+    )
+    const events = await collect(
+      streamOpenAICompatible(request, {
+        baseUrl: "https://openrouter.ai/api/v1",
+        apiKey: "k",
+        fetchFn,
+      })
+    )
+    const done = events.find((e) => e.type === "done")
+    expect(done?.response?.content).toBe("Hi")
+    expect(done?.response?.usage.inputTokens).toBe(3)
+    expect(
+      (done?.response?.usage.rawUsage as { cost: number }).cost
+    ).toBe(0.00001)
+  })
+
+  it("turns a mid-stream error event into a ProviderError instead of a finished answer", async () => {
+    // The status line was 200 and text had started arriving. Without this,
+    // the stream would end normally and the half answer would be recorded
+    // COMPLETED — billed, and shown as the model's whole reply.
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(
+        bodyOf([
+          'data: {"id":"gen-2","choices":[{"delta":{"content":"Half an"}}]}\n\n',
+          'data: {"id":"gen-2","error":{"code":502,"message":"Upstream closed the connection"},"choices":[{"delta":{},"finish_reason":"error"}]}\n\n',
+          "data: [DONE]\n\n",
+        ]),
+        { status: 200 }
+      )
+    )
+    const stream = streamOpenAICompatible(request, {
+      baseUrl: "https://openrouter.ai/api/v1",
+      apiKey: "k",
+      fetchFn,
+    })
+    await expect(collect(stream)).rejects.toMatchObject({
+      name: "ProviderError",
+      code: "SERVER_ERROR",
+      retryable: true,
+      httpStatus: 502,
+    })
+  })
+})

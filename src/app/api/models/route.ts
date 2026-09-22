@@ -50,7 +50,7 @@ const ROLES = [
 ] as const
 
 const createSchema = z.object({
-  provider: z.enum(["OPENAI", "ANTHROPIC", "GOOGLE", "XAI"]),
+  provider: z.enum(["OPENAI", "ANTHROPIC", "GOOGLE", "XAI", "OPENROUTER"]),
   // Not constrained to the catalog on purpose: the catalog is a shortcut for
   // the picker, not an allow-list. Providers ship models faster than that
   // file is edited, and rejecting an unlisted ID here would make a stale

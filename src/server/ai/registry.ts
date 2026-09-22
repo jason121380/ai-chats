@@ -5,6 +5,7 @@ import { OpenAIProvider } from "./providers/openai"
 import { AnthropicProvider } from "./providers/anthropic"
 import { GeminiProvider } from "./providers/gemini"
 import { XAIProvider } from "./providers/xai"
+import { OpenRouterProvider } from "./providers/openrouter"
 
 /**
  * ProviderRegistry — maps a ProviderName to its adapter.
@@ -56,6 +57,11 @@ export function getProviderRegistry(): ProviderRegistry {
   }
   if (env.XAI_API_KEY) {
     registry.register(new XAIProvider({ apiKey: env.XAI_API_KEY }))
+  }
+  if (env.OPENROUTER_API_KEY) {
+    registry.register(
+      new OpenRouterProvider({ apiKey: env.OPENROUTER_API_KEY })
+    )
   }
 
   defaultRegistry = registry
