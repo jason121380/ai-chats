@@ -209,7 +209,19 @@ export const t = {
     convertedNote: (rate: string, when: string) =>
       `金額以 1 美元 = ${rate} 台幣換算顯示（${when} 設定）；帳本原始金額為美金。`,
     addModelHint: "從各家近期的模型挑一個，或直接填入模型 ID。",
+    openRouterHint:
+      "OpenRouter 一把金鑰接所有模型。清單與價格直接來自 OpenRouter，選定後價格會一併寫入。",
     recentModels: "近期模型",
+    searchModels: "搜尋模型",
+    searchModelsPlaceholder: "例如 claude、gemini、deepseek",
+    catalogLoading: "載入 OpenRouter 模型清單…",
+    catalogFailed: "無法載入 OpenRouter 模型清單",
+    catalogEmpty: "沒有符合的模型",
+    catalogMore: (n: number) => `還有 ${n} 個，請縮小搜尋範圍`,
+    catalogNoPrice: "未公告價格",
+    openRouterIdPlaceholder: "例如 anthropic/claude-sonnet-4.5",
+    priceImportFailed:
+      "模型已新增，但價格寫入失敗。請到「價格」分頁手動設定。",
     alreadyAdded: "已在清單",
     modelIdLabel: "模型 ID",
     modelIdPlaceholder: "例如 gpt-5.6-luna",

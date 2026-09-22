@@ -20,6 +20,35 @@ export interface OpenAICompatibleOptions {
   fetchFn?: FetchFn
   /** Name of the max-tokens parameter, which differs between vendors. */
   maxTokensParam?: "max_tokens" | "max_completion_tokens"
+  /** Vendor-specific headers sent on every request, e.g. app attribution. */
+  extraHeaders?: Record<string, string>
+}
+
+interface ErrorPayload {
+  code?: unknown
+  message?: unknown
+}
+
+/**
+ * An error the provider reported INSIDE a 200 response.
+ *
+ * OpenRouter does this: once it has forwarded the request upstream, the
+ * status line is already sent, so a failure after that point arrives as a
+ * JSON body (or a stream event) carrying `error` with an HTTP-style numeric
+ * code. Treating that as success would record half an answer as COMPLETED
+ * and bill it — so it is classified exactly as the same HTTP status would be.
+ */
+function errorFromPayload(error: ErrorPayload): ProviderError {
+  const message =
+    typeof error.message === "string" ? error.message : JSON.stringify(error)
+  const code = Number(error.code)
+  if (Number.isInteger(code) && code >= 400) {
+    return providerErrorFromHttp(code, message)
+  }
+  return new ProviderError(`Provider returned an error: ${message}`, {
+    code: "UNKNOWN",
+    retryable: false,
+  })
 }
 
 export async function generateOpenAICompatible(
@@ -53,6 +82,7 @@ export async function generateOpenAICompatible(
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${options.apiKey}`,
+        ...options.extraHeaders,
       },
       body: JSON.stringify(body),
       signal: request.signal ?? null,
@@ -78,7 +108,11 @@ export async function generateOpenAICompatible(
     }>
     usage?: unknown
     model?: string
+    provider?: string
+    error?: ErrorPayload
   }
+
+  if (json.error) throw errorFromPayload(json.error)
 
   const choice = json.choices?.[0]
   if (!choice) {
@@ -93,18 +127,32 @@ export async function generateOpenAICompatible(
     usage: normalizeOpenAIUsage(json.usage ?? null),
     providerRequestId: json.id,
     finishReason: choice.finish_reason,
-    metadata: { model: json.model },
+    metadata: withUpstream({ model: json.model }, json.provider),
   }
+}
+
+/**
+ * A gateway names the vendor that actually served the call (OpenRouter's
+ * top-level `provider`). Recorded so the ledger can say which upstream a
+ * `vendor/model` slug resolved to on that day; absent for direct providers.
+ */
+function withUpstream(
+  metadata: Record<string, unknown>,
+  upstream: string | undefined
+): Record<string, unknown> {
+  return upstream ? { ...metadata, upstreamProvider: upstream } : metadata
 }
 
 interface StreamChunk {
   id?: string
   model?: string
+  provider?: string
   choices?: Array<{
     delta?: { content?: string | null }
     finish_reason?: string | null
   }>
   usage?: unknown
+  error?: ErrorPayload
 }
 
 /**
@@ -153,6 +201,7 @@ export async function* streamOpenAICompatible(
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${options.apiKey}`,
+        ...options.extraHeaders,
       },
       body: JSON.stringify(body),
       signal: request.signal ?? null,
@@ -180,14 +229,17 @@ export async function* streamOpenAICompatible(
   let usage: unknown = null
   let requestId: string | undefined
   let model: string | undefined
+  let upstream: string | undefined
   let finishReason: string | undefined
 
   for await (const payload of readSseData(res.body)) {
     if (payload === "[DONE]") break
     const chunk = parseSseJson<StreamChunk>(payload)
     if (!chunk) continue
+    if (chunk.error) throw errorFromPayload(chunk.error)
     if (chunk.id) requestId = chunk.id
     if (chunk.model) model = chunk.model
+    if (chunk.provider) upstream = chunk.provider
     if (chunk.usage) usage = chunk.usage
     const choice = chunk.choices?.[0]
     if (choice?.finish_reason) finishReason = choice.finish_reason
@@ -205,7 +257,7 @@ export async function* streamOpenAICompatible(
       usage: normalizeOpenAIUsage(usage),
       providerRequestId: requestId,
       finishReason,
-      metadata: { model },
+      metadata: withUpstream({ model }, upstream),
     },
   }
 }

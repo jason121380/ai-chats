@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Check, Plus, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -15,10 +15,17 @@ import {
 import { catalogFor, type CatalogModel } from "@/lib/model-catalog"
 import { cn } from "@/lib/utils"
 import { t } from "@/lib/i18n"
-import { PROVIDER_LABELS, ROLE_LABELS } from "@/types/api"
+import {
+  PROVIDER_LABELS,
+  ROLE_LABELS,
+  type OpenRouterCatalogModelDto,
+} from "@/types/api"
 
-const PROVIDERS = ["OPENAI", "ANTHROPIC", "GOOGLE", "XAI"] as const
+const PROVIDERS = ["OPENAI", "ANTHROPIC", "GOOGLE", "XAI", "OPENROUTER"] as const
 type Provider = (typeof PROVIDERS)[number]
+
+/** The live list is hundreds of rows; past this the search box is the UI. */
+const MAX_CATALOG_ROWS = 40
 
 /**
  * Add a model to 設定. A curated list of each provider's current models, plus
@@ -28,6 +35,11 @@ type Provider = (typeof PROVIDERS)[number]
  * stale catalog from becoming a dead end. This project has already shipped a
  * model ID that the provider retired; when that happens next, the operator
  * needs to be able to type the replacement without waiting for a deploy.
+ *
+ * OpenRouter is the exception to "curated": its catalog is fetched live from
+ * OpenRouter, searched here, and the chosen model's published price is
+ * written to the pricing table in the same step — the list cannot go stale
+ * and the price cannot be forgotten.
  *
  * Hand-built rather than a Dialog dependency, matching designer_web: Esc and
  * backdrop close it, background scroll is locked while it is open.
@@ -51,6 +63,17 @@ export function AddModelDialog({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // OpenRouter's live catalog. Loaded once per open, the first time the
+  // provider is chosen; the server caches the upstream fetch.
+  const [catalog, setCatalog] = useState<OpenRouterCatalogModelDto[] | null>(
+    null
+  )
+  const [catalogError, setCatalogError] = useState<string | null>(null)
+  const [query, setQuery] = useState("")
+  // The price that travels with the picked row. Cleared when the ID is
+  // edited by hand, because a typed ID is not the row that was picked.
+  const [picked, setPicked] = useState<OpenRouterCatalogModelDto | null>(null)
+
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
@@ -72,14 +95,63 @@ export function AddModelDialog({
       setDisplayName("")
       setRole("GENERAL")
       setError(null)
+      setCatalog(null)
+      setCatalogError(null)
+      setQuery("")
+      setPicked(null)
     }
   }, [open])
 
+  useEffect(() => {
+    if (!open || provider !== "OPENROUTER" || catalog !== null) return
+    let cancelled = false
+    setCatalogError(null)
+    fetch("/api/openrouter/models")
+      .then(async (res) => {
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error ?? t.settings.catalogFailed)
+        return data as { models: OpenRouterCatalogModelDto[] }
+      })
+      .then((data) => {
+        if (!cancelled) setCatalog(data.models)
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setCatalogError(
+            err instanceof Error ? err.message : t.settings.catalogFailed
+          )
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open, provider, catalog])
+
+  const matches = useMemo(() => {
+    if (!catalog) return []
+    const q = query.trim().toLowerCase()
+    if (!q) return catalog
+    return catalog.filter(
+      (m) =>
+        m.modelId.toLowerCase().includes(q) ||
+        m.displayName.toLowerCase().includes(q)
+    )
+  }, [catalog, query])
+
   if (!open) return null
+
+  const isOpenRouter = provider === "OPENROUTER"
 
   const pick = (m: CatalogModel) => {
     setModelId(m.modelId)
     setDisplayName(m.displayName)
+    setError(null)
+  }
+
+  const pickLive = (m: OpenRouterCatalogModelDto) => {
+    setModelId(m.modelId)
+    setDisplayName(m.displayName)
+    setPicked(m)
     setError(null)
   }
 
@@ -105,6 +177,34 @@ export function AddModelDialog({
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? t.errors.requestFailed)
       onAdded()
+
+      // The published price goes in with the model. Posting to /api/pricing
+      // closes any previous row and opens a new one, so a re-added model gets
+      // today's rate without touching yesterday's ledger snapshots.
+      const price =
+        isOpenRouter && picked && picked.modelId === id ? picked.pricing : null
+      if (price) {
+        const priced = await fetch("/api/pricing", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            provider,
+            modelId: id,
+            inputPerMillion: price.inputPerMillion,
+            outputPerMillion: price.outputPerMillion,
+            cachedInputPerMillion: price.cachedInputPerMillion,
+            reasoningPerMillion: price.reasoningPerMillion,
+            source: `openrouter.ai/api/v1/models，查證於 ${new Date()
+              .toISOString()
+              .slice(0, 10)}`,
+          }),
+        })
+        if (!priced.ok) {
+          // The model is in; say so rather than closing as if all went well.
+          setError(t.settings.priceImportFailed)
+          return
+        }
+      }
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -113,7 +213,7 @@ export function AddModelDialog({
     }
   }
 
-  const catalog = catalogFor(provider)
+  const staticCatalog = catalogFor(provider)
 
   return (
     <div
@@ -135,7 +235,7 @@ export function AddModelDialog({
               {t.settings.addModel}
             </h2>
             <p className="mt-1 text-sm text-gray-400">
-              {t.settings.addModelHint}
+              {isOpenRouter ? t.settings.openRouterHint : t.settings.addModelHint}
             </p>
           </div>
           <button
@@ -159,6 +259,8 @@ export function AddModelDialog({
                 setProvider(v as Provider)
                 setModelId("")
                 setDisplayName("")
+                setPicked(null)
+                setQuery("")
               }}
             >
               <SelectTrigger>
@@ -174,57 +276,99 @@ export function AddModelDialog({
             </Select>
           </label>
 
-          <div>
-            <span className="mb-1.5 block text-xs font-medium text-gray-500">
-              {t.settings.recentModels}
-            </span>
-            <div className="space-y-1.5">
-              {catalog.map((m) => {
-                const already = existingKeys.has(`${m.provider}/${m.modelId}`)
-                const selected = modelId === m.modelId
-                return (
-                  <button
-                    key={m.modelId}
-                    type="button"
-                    onClick={() => pick(m)}
-                    className={cn(
-                      "flex w-full items-start gap-3 rounded-lg border px-3 py-2 text-left transition-colors",
-                      selected
-                        ? "border-rose-brand bg-rose-light/40"
-                        : "border-gray-200 bg-white hover:border-rose-brand"
-                    )}
-                  >
-                    <span className="min-w-0 flex-1">
-                      <span className="flex flex-wrap items-center gap-x-2">
-                        <span
-                          className={cn(
-                            "text-sm font-semibold",
-                            selected ? "text-rose-dark" : "text-gray-900"
-                          )}
-                        >
-                          {m.displayName}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {m.released}
-                        </span>
-                        {already && (
-                          <span className="text-xs text-gray-400">
-                            · {t.settings.alreadyAdded}
-                          </span>
+          {isOpenRouter ? (
+            <div>
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-medium text-gray-500">
+                  {t.settings.searchModels}
+                </span>
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t.settings.searchModelsPlaceholder}
+                />
+              </label>
+              <div className="mt-2 max-h-72 space-y-1.5 overflow-y-auto">
+                {catalogError ? (
+                  <p className="text-sm text-red-500">{catalogError}</p>
+                ) : catalog === null ? (
+                  <p className="text-sm text-gray-400">
+                    {t.settings.catalogLoading}
+                  </p>
+                ) : matches.length === 0 ? (
+                  <p className="text-sm text-gray-400">
+                    {t.settings.catalogEmpty}
+                  </p>
+                ) : (
+                  <>
+                    {matches.slice(0, MAX_CATALOG_ROWS).map((m) => (
+                      <CatalogRow
+                        key={m.modelId}
+                        model={m}
+                        selected={modelId === m.modelId}
+                        already={existingKeys.has(`OPENROUTER/${m.modelId}`)}
+                        onPick={() => pickLive(m)}
+                      />
+                    ))}
+                    {matches.length > MAX_CATALOG_ROWS && (
+                      <p className="px-1 pt-1 text-xs text-gray-400">
+                        {t.settings.catalogMore(
+                          matches.length - MAX_CATALOG_ROWS
                         )}
-                      </span>
-                      <span className="mt-0.5 block truncate text-xs text-gray-400">
-                        {m.modelId} · {m.note}
-                      </span>
-                    </span>
-                    {selected && (
-                      <Check size={16} className="mt-0.5 shrink-0 text-rose-brand" />
+                      </p>
                     )}
-                  </button>
-                )
-              })}
+                  </>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div>
+              <span className="mb-1.5 block text-xs font-medium text-gray-500">
+                {t.settings.recentModels}
+              </span>
+              <div className="space-y-1.5">
+                {staticCatalog.map((m) => {
+                  const already = existingKeys.has(`${m.provider}/${m.modelId}`)
+                  const selected = modelId === m.modelId
+                  return (
+                    <button
+                      key={m.modelId}
+                      type="button"
+                      onClick={() => pick(m)}
+                      className={rowClass(selected)}
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="flex flex-wrap items-center gap-x-2">
+                          <span
+                            className={cn(
+                              "text-sm font-semibold",
+                              selected ? "text-rose-dark" : "text-gray-900"
+                            )}
+                          >
+                            {m.displayName}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {m.released}
+                          </span>
+                          {already && (
+                            <span className="text-xs text-gray-400">
+                              · {t.settings.alreadyAdded}
+                            </span>
+                          )}
+                        </span>
+                        <span className="mt-0.5 block truncate text-xs text-gray-400">
+                          {m.modelId} · {m.note}
+                        </span>
+                      </span>
+                      {selected && (
+                        <Check size={16} className="mt-0.5 shrink-0 text-rose-brand" />
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           <label className="block">
             <span className="mb-1.5 block text-xs font-medium text-gray-500">
@@ -232,8 +376,15 @@ export function AddModelDialog({
             </span>
             <Input
               value={modelId}
-              onChange={(e) => setModelId(e.target.value)}
-              placeholder={t.settings.modelIdPlaceholder}
+              onChange={(e) => {
+                setModelId(e.target.value)
+                setPicked(null)
+              }}
+              placeholder={
+                isOpenRouter
+                  ? t.settings.openRouterIdPlaceholder
+                  : t.settings.modelIdPlaceholder
+              }
             />
             <span className="mt-1.5 block text-xs text-gray-400">
               {t.settings.modelIdHint}
@@ -284,5 +435,69 @@ export function AddModelDialog({
         </div>
       </div>
     </div>
+  )
+}
+
+function rowClass(selected: boolean): string {
+  return cn(
+    "flex w-full items-start gap-3 rounded-lg border px-3 py-2 text-left transition-colors",
+    selected
+      ? "border-rose-brand bg-rose-light/40"
+      : "border-gray-200 bg-white hover:border-rose-brand"
+  )
+}
+
+/** "128K" for a context window; the exact count is noise in a picker. */
+function formatContext(tokens: number): string {
+  return tokens >= 1000 ? `${Math.round(tokens / 1000)}K` : String(tokens)
+}
+
+function CatalogRow({
+  model,
+  selected,
+  already,
+  onPick,
+}: {
+  model: OpenRouterCatalogModelDto
+  selected: boolean
+  already: boolean
+  onPick: () => void
+}) {
+  const detail = [
+    model.modelId,
+    model.contextLength !== null ? formatContext(model.contextLength) : null,
+    model.pricing
+      ? `$${model.pricing.inputPerMillion} / $${model.pricing.outputPerMillion} ${t.settings.perMillion}`
+      : t.settings.catalogNoPrice,
+  ]
+    .filter(Boolean)
+    .join(" · ")
+
+  return (
+    <button type="button" onClick={onPick} className={rowClass(selected)}>
+      <span className="min-w-0 flex-1">
+        <span className="flex flex-wrap items-center gap-x-2">
+          <span
+            className={cn(
+              "text-sm font-semibold",
+              selected ? "text-rose-dark" : "text-gray-900"
+            )}
+          >
+            {model.displayName}
+          </span>
+          {already && (
+            <span className="text-xs text-gray-400">
+              · {t.settings.alreadyAdded}
+            </span>
+          )}
+        </span>
+        <span className="mt-0.5 block truncate text-xs text-gray-400">
+          {detail}
+        </span>
+      </span>
+      {selected && (
+        <Check size={16} className="mt-0.5 shrink-0 text-rose-brand" />
+      )}
+    </button>
   )
 }

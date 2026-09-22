@@ -185,6 +185,7 @@ function CouncilBody({
           key={`${p.provider}/${p.modelId}`}
           displayName={nameFor(p.provider, p.modelId)}
           provider={p.provider}
+          modelId={p.modelId}
         />
       ))}
 
@@ -210,6 +211,7 @@ function CouncilBody({
                   key={`critique-${r.id}`}
                   displayName={nameFor(r.provider, r.modelId)}
                   provider={r.provider}
+                  modelId={r.modelId}
                 />
               ))}
         </>
@@ -331,6 +333,7 @@ function DiscussionBody({
                 key={`${p.provider}/${p.modelId}`}
                 displayName={nameFor(p.provider, p.modelId)}
                 provider={p.provider}
+                modelId={p.modelId}
               />
             ))}
           </div>

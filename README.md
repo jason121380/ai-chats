@@ -18,7 +18,7 @@ Chairman     integrates everything and decides
 Final Answer
 ```
 
-Supported providers today: **OpenAI**, **Anthropic**, **Google Gemini**, **xAI**. The provider layer is an adapter pattern — adding Muse, Spark, DeepSeek, Kimi, GLM or Qwen means writing one adapter and registering it. The Council Engine does not change.
+Supported providers today: **OpenAI**, **Anthropic**, **Google Gemini**, **xAI**, and **OpenRouter** — one key that carries every vendor OpenRouter lists (DeepSeek, Kimi, GLM, Qwen and the four above), with the model catalog and prices pulled live from OpenRouter instead of maintained by hand. The provider layer is an adapter pattern — adding a vendor directly means writing one adapter and registering it. The Council Engine does not change.
 
 ---
 
@@ -136,6 +136,7 @@ npm start
 | `ANTHROPIC_API_KEY` | optional | enables the Anthropic provider |
 | `GOOGLE_AI_API_KEY` | optional | enables the Gemini provider |
 | `XAI_API_KEY` | optional | enables the xAI provider |
+| `OPENROUTER_API_KEY` | optional | enables the OpenRouter provider (any vendor, one key) |
 | `APP_SECRET` | optional | reserved for authentication |
 | `PROVIDER_TIMEOUT_MS` | optional | per-request provider timeout, default 120000 |
 | `COUNCIL_STALE_AFTER_MS` | optional | a non-terminal run older than this is marked FAILED, default 900000 |

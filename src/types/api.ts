@@ -144,6 +144,19 @@ export interface ModelUsageRowDto {
   averageLatencyMs: number | null
 }
 
+/** One row of OpenRouter's model list, prices already per 1M tokens in USD. */
+export interface OpenRouterCatalogModelDto {
+  modelId: string
+  displayName: string
+  contextLength: number | null
+  pricing: {
+    inputPerMillion: string
+    outputPerMillion: string
+    cachedInputPerMillion: string | null
+    reasoningPerMillion: string | null
+  } | null
+}
+
 export interface PricingRowDto {
   id: string
   provider: string
@@ -165,6 +178,7 @@ export const PROVIDER_LABELS: Record<string, string> = {
   XAI: "xAI",
   MUSE: "Muse",
   SPARK: "Spark",
+  OPENROUTER: "OpenRouter",
 }
 
 export const ROLE_LABELS: Record<string, string> = {
