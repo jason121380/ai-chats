@@ -5,7 +5,7 @@ import type {
   AIStreamEvent,
   FetchFn,
 } from "../types"
-import { ProviderError, providerErrorFromHttp } from "../types"
+import { networkError, ProviderError, providerErrorFromHttp } from "../types"
 import { normalizeGeminiUsage } from "../normalize-usage"
 import { parseSseJson, readSseData } from "./sse"
 
@@ -69,10 +69,7 @@ export class GeminiProvider implements AIProvider {
       })
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") throw err
-      throw new ProviderError(`Network error: ${String(err)}`, {
-        code: "NETWORK",
-        cause: err,
-      })
+      throw networkError(err)
     }
 
     if (!res.ok) {
@@ -167,10 +164,7 @@ export class GeminiProvider implements AIProvider {
       })
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") throw err
-      throw new ProviderError(`Network error: ${String(err)}`, {
-        code: "NETWORK",
-        cause: err,
-      })
+      throw networkError(err)
     }
 
     if (!res.ok) {

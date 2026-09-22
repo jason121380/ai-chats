@@ -4,7 +4,7 @@ import type {
   AIStreamEvent,
   FetchFn,
 } from "../types"
-import { ProviderError, providerErrorFromHttp } from "../types"
+import { networkError, ProviderError, providerErrorFromHttp } from "../types"
 import { normalizeOpenAIUsage } from "../normalize-usage"
 import { parseSseJson, readSseData } from "./sse"
 
@@ -89,10 +89,7 @@ export async function generateOpenAICompatible(
     })
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") throw err
-    throw new ProviderError(`Network error: ${String(err)}`, {
-      code: "NETWORK",
-      cause: err,
-    })
+    throw networkError(err)
   }
 
   if (!res.ok) {
@@ -208,10 +205,7 @@ export async function* streamOpenAICompatible(
     })
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") throw err
-    throw new ProviderError(`Network error: ${String(err)}`, {
-      code: "NETWORK",
-      cause: err,
-    })
+    throw networkError(err)
   }
 
   if (!res.ok) {
