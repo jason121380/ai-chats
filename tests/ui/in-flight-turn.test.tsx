@@ -86,18 +86,36 @@ describe("a turn still in flight", () => {
     expect(screen.queryByLabelText(t.transcript.typing)).toBeNull()
   })
 
-  it("keeps the failure block for a failed turn", () => {
+  /**
+   * A successful turn carries its speaker's name inside the bubble and a
+   * failed one did not, so a round where three participants fell over was
+   * three identical red boxes: same wording, same wrapped network error, no
+   * way to tell which models they were. The avatar does not settle it either,
+   * since it shows the vendor behind a gateway slug rather than the route.
+   */
+  it("names the speaker and the model on a failed turn", () => {
     render(
       <ChatMessage
         run={runWith({
           status: "FAILED",
           response: null,
-          errorMessage: "INVALID_REQUEST",
+          errorCode: "NETWORK",
+          errorMessage: "Network error: fetch failed",
+          modelId: "google/gemini-3.8-flash",
         })}
         displayName="Gemini 3.8 Flash"
       />
     )
-    expect(screen.getByText(t.transcript.failedTitle)).toBeTruthy()
+    expect(
+      screen.getByText(
+        (_, el) =>
+          el?.textContent === `Gemini 3.8 Flash · ${t.transcript.failedTitle}`
+      )
+    ).toBeTruthy()
+    expect(screen.getByText("google/gemini-3.8-flash")).toBeTruthy()
+    expect(
+      screen.getByText("NETWORK: Network error: fetch failed")
+    ).toBeTruthy()
     expect(screen.queryByLabelText(t.transcript.typing)).toBeNull()
   })
 })

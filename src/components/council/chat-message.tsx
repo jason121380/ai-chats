@@ -110,12 +110,21 @@ export function ChatMessage({
         {failed ? (
           <div className="flex items-start gap-2 rounded-2xl rounded-bl-md border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <div>
+            <div className="min-w-0">
+              {/* Who failed, and on which model. A successful turn carries
+                  its speaker's name in the bubble and this one did not, so a
+                  round where several participants fell over was three
+                  identical red boxes telling you nothing about which models
+                  they were — or, once the avatar started showing the vendor
+                  behind a gateway slug, whether they went through one. */}
               <div className="font-medium">
+                {displayName}
+                {" · "}
                 {run.status === "TIMEOUT"
                   ? t.transcript.timeoutTitle
                   : t.transcript.failedTitle}
               </div>
+              <div className="text-xs opacity-70">{run.modelId}</div>
               <div className="text-xs opacity-80">
                 {run.errorCode ? `${run.errorCode}: ` : ""}
                 {run.errorMessage ?? t.errors.unknown}

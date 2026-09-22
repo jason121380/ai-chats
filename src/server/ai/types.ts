@@ -137,5 +137,49 @@ export function providerErrorFromHttp(
   })
 }
 
+/**
+ * Flatten an error and everything that caused it into one line.
+ *
+ * Node reports every transport failure as the same `TypeError: fetch failed`.
+ * What actually happened — the name could not be resolved, the connection was
+ * refused, the connect timed out, TLS was rejected, the socket reset — is in
+ * `cause`, and undici nests it a level deeper again when several addresses
+ * were tried. Reading only the top level, which is what `String(err)` does,
+ * wrote the same unhelpful sentence into the ledger for a DNS outage and a
+ * refused connection alike, and left nobody able to tell them apart after
+ * the fact.
+ */
+function describeError(err: unknown): string {
+  const parts: string[] = []
+  const seen = new Set<unknown>()
+  let current: unknown = err
+
+  while (current instanceof Error && !seen.has(current)) {
+    seen.add(current)
+    const code = (current as { code?: unknown }).code
+    parts.push(
+      typeof code === "string" ? `${current.message} (${code})` : current.message
+    )
+    // An AggregateError carries the per-address failures; the first one is
+    // the reason, and listing all of them is the same sentence repeated.
+    const nested = (current as { errors?: unknown }).errors
+    current =
+      Array.isArray(nested) && nested.length > 0 ? nested[0] : current.cause
+  }
+
+  return parts.length > 0 ? parts.join(" caused by: ") : String(err)
+}
+
+/**
+ * A request that never reached the provider. Always retryable: nothing was
+ * sent, so nothing can be duplicated by trying again.
+ */
+export function networkError(err: unknown): ProviderError {
+  return new ProviderError(`Network error: ${describeError(err)}`, {
+    code: "NETWORK",
+    cause: err,
+  })
+}
+
 /** Fetch-compatible function type so adapters can be tested with mocks. */
 export type FetchFn = typeof fetch

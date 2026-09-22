@@ -95,6 +95,54 @@ describe("OpenAIProvider", () => {
       retryable: true,
     })
   })
+
+  /**
+   * Node reports every transport failure as the same `TypeError: fetch
+   * failed`. Three models failing at once wrote that one sentence three
+   * times and nobody could tell a DNS outage from a refused connection
+   * afterwards, because the reason lives in `cause` and was being dropped.
+   */
+  it("keeps the reason a request never left the machine", async () => {
+    const cause = Object.assign(
+      new Error("getaddrinfo ENOTFOUND openrouter.ai"),
+      { code: "ENOTFOUND" }
+    )
+    const fetchFn = vi
+      .fn()
+      .mockRejectedValue(new TypeError("fetch failed", { cause }))
+    const provider = new OpenAIProvider({ apiKey: "sk-test", fetchFn })
+    await expect(provider.generate(request)).rejects.toMatchObject({
+      code: "NETWORK",
+      message:
+        "Network error: fetch failed caused by: getaddrinfo ENOTFOUND openrouter.ai (ENOTFOUND)",
+    })
+  })
+
+  it("reaches through the AggregateError undici wraps several addresses in", async () => {
+    const refused = Object.assign(new Error("connect ECONNREFUSED"), {
+      code: "ECONNREFUSED",
+    })
+    const fetchFn = vi.fn().mockRejectedValue(
+      new TypeError("fetch failed", {
+        cause: new AggregateError([refused], "all addresses failed"),
+      })
+    )
+    const provider = new OpenAIProvider({ apiKey: "sk-test", fetchFn })
+    await expect(provider.generate(request)).rejects.toMatchObject({
+      message:
+        "Network error: fetch failed caused by: all addresses failed caused by: connect ECONNREFUSED (ECONNREFUSED)",
+    })
+  })
+
+  it("survives a cause that points back at itself", async () => {
+    const loop = new Error("round and round") as Error & { cause?: unknown }
+    loop.cause = loop
+    const fetchFn = vi.fn().mockRejectedValue(loop)
+    const provider = new OpenAIProvider({ apiKey: "sk-test", fetchFn })
+    await expect(provider.generate(request)).rejects.toMatchObject({
+      message: "Network error: round and round",
+    })
+  })
 })
 
 describe("XAIProvider", () => {
