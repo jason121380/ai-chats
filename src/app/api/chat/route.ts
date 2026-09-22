@@ -5,6 +5,7 @@ import type { ProviderName } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { getProviderRegistry } from "@/server/ai/registry"
 import { executeModelRun } from "@/server/ai/router"
+import { buildSoloSystemPrompt } from "@/server/council/prompts"
 import {
   deriveSessionTitle,
   handleRouteError,
@@ -62,6 +63,7 @@ export async function POST(req: NextRequest) {
         provider,
         modelId: body.model.modelId,
         stage: "SOLO",
+        systemPrompt: buildSoloSystemPrompt(),
         messages: [
           ...history.map((m) => ({
             role:
