@@ -266,6 +266,24 @@ describe("OpenRouterProvider", () => {
     expect(body.usage).toBeUndefined()
   })
 
+  it("caps output when 設定 sets no limit, so OpenRouter reserves for an answer, not a ceiling", async () => {
+    // Without max_tokens OpenRouter reserves credit for the model's whole
+    // output ceiling and refuses with 402 when the balance cannot cover
+    // it — "requested up to 65536 tokens, but can only afford 800".
+    const fetchFn = vi.fn().mockResolvedValue(
+      jsonResponse({
+        id: "gen-1",
+        choices: [{ message: { content: "ok" }, finish_reason: "stop" }],
+        usage: { prompt_tokens: 1, completion_tokens: 1 },
+      })
+    )
+    const provider = new OpenRouterProvider({ apiKey: "or-test", fetchFn })
+    const { maxOutputTokens: _unset, ...uncapped } = request
+    await provider.generate(uncapped)
+    const [, init] = fetchFn.mock.calls[0] as [string, RequestInit]
+    expect(JSON.parse(init.body as string).max_tokens).toBe(8192)
+  })
+
   it("treats an error payload inside a 200 as the failure it is", async () => {
     // OpenRouter has already sent the status line when an upstream fails, so
     // the failure comes back as a body. Reading it as "no choices" would be
