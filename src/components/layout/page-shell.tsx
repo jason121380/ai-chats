@@ -22,14 +22,19 @@ export function PageShell({
   description?: ReactNode
   actions?: ReactNode
   children: ReactNode
-  width?: "narrow" | "wide"
+  /** "full" is for a page laid out in columns; the columns set their own widths. */
+  width?: "narrow" | "wide" | "full"
   className?: string
 }) {
   return (
     <div
       className={cn(
         "mx-auto pb-20",
-        width === "narrow" ? "max-w-3xl" : "max-w-5xl",
+        width === "narrow"
+          ? "max-w-3xl"
+          : width === "full"
+            ? "max-w-none"
+            : "max-w-5xl",
         className
       )}
     >
