@@ -30,6 +30,17 @@ export const ROLE_DESCRIPTIONS: Record<CouncilRole, string> = {
 const REPLY_LANGUAGE =
   "Write your answer in Traditional Chinese (繁體中文, Taiwan usage), regardless of the language these instructions are written in."
 
+/**
+ * Solo chat and compare send this and nothing else. Without it a model is
+ * on its own to guess the language, and a two-character question like
+ * 「名留」 reads as Japanese as readily as Chinese — it was answered in
+ * Japanese in production. The council prompts pin the language; the
+ * one-model paths get the same pin.
+ */
+export function buildSoloSystemPrompt(): string {
+  return REPLY_LANGUAGE
+}
+
 export function buildRoundOneSystemPrompt(role: CouncilRole): string {
   return [
     ROLE_DESCRIPTIONS[role],
