@@ -98,26 +98,49 @@ interface PricingSeedRow {
 }
 
 async function main() {
-  for (const model of MODELS) {
-    await prisma.modelConfig.upsert({
-      where: {
-        provider_modelId: { provider: model.provider, modelId: model.modelId },
-      },
-      create: {
-        provider: model.provider,
-        modelId: model.modelId,
-        displayName: model.displayName,
-        defaultRole: model.defaultRole,
-        sortOrder: model.sortOrder,
-        supportsReasoning: model.supportsReasoning ?? false,
-        enabled: true,
-      },
-      update: {
-        displayName: model.displayName,
-        sortOrder: model.sortOrder,
-      },
-    })
-    console.log(`ModelConfig ready: ${model.provider}/${model.modelId}`)
+  /**
+   * The defaults are for a database that has never had a model in it.
+   *
+   * They used to be upserted on every boot, which meant deleting one in 設定
+   * undid itself on the next deploy: the row came back, enabled, and the
+   * operator had to delete it again after every push. That was the seed
+   * treating this file as the authority on which models exist, when the
+   * authority is whoever is running the thing — they can now add any model
+   * OpenRouter carries without touching the repository at all.
+   *
+   * So: provision a first boot, where a blank 設定 reads as a broken deploy,
+   * and after that leave the list alone. An empty table is the one case this
+   * cannot tell apart from a fresh install, so deleting every model and
+   * redeploying does bring the defaults back — which beats an app with
+   * nothing to call.
+   */
+  const configured = await prisma.modelConfig.count()
+  if (configured === 0) {
+    for (const model of MODELS) {
+      await prisma.modelConfig.upsert({
+        where: {
+          provider_modelId: { provider: model.provider, modelId: model.modelId },
+        },
+        create: {
+          provider: model.provider,
+          modelId: model.modelId,
+          displayName: model.displayName,
+          defaultRole: model.defaultRole,
+          sortOrder: model.sortOrder,
+          supportsReasoning: model.supportsReasoning ?? false,
+          enabled: true,
+        },
+        update: {
+          displayName: model.displayName,
+          sortOrder: model.sortOrder,
+        },
+      })
+      console.log(`ModelConfig seeded: ${model.provider}/${model.modelId}`)
+    }
+  } else {
+    console.log(
+      `ModelConfig: ${configured} already configured — leaving the list as the operator left it`
+    )
   }
 
   for (const retired of RETIRED) {

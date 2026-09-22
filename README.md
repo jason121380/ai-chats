@@ -257,11 +257,15 @@ container — serving against a schema that does not match the code produces
 wrong answers. A seed failure only logs a warning: the cost is an empty
 model list, and taking the app down for that is worse.
 
-The seed is safe to re-run. It upserts, and its update branch rewrites only
-`displayName` and `sortOrder` — disabling a model in 設定 survives every
-redeploy. It does mean `prisma/seed.ts` is the source of truth for which
-`ModelConfig` rows exist: a row deleted straight from the database comes
-back on the next boot.
+The seed is safe to re-run. It fills the model list **only when that list is
+empty**, so it provisions a fresh database and then keeps out of the way:
+a model added in 設定 is not touched, and one deleted there does not come
+back on the next deploy. Deleting every model and redeploying does restore
+the defaults, because an empty table is indistinguishable from a fresh
+install — and an app with nothing to call is the worse outcome.
+
+Pricing is a separate matter and is applied on every run: prices change,
+and pricing rows are only ever added, never edited.
 
 This project uses Prisma's driver-adapter + query-compiler mode (`engineType = "client"` with `@prisma/adapter-pg`), so no native query-engine binary needs to be downloaded at build time.
 
@@ -284,7 +288,14 @@ The Council Engine needs no changes. Do not invent an API specification for a pr
 
 ## Adding a model
 
-Add a row to `prisma/seed.ts` (or insert directly), then `npm run db:seed`. The UI reads `ModelConfig` — model names are never hardcoded in components.
+Use 設定 → 新增模型. With an OpenRouter key, that dialog searches OpenRouter's
+live model list and writes the model's published price along with it; for a
+direct provider it offers a short curated list plus a free-text model ID. The
+UI reads `ModelConfig` — model names are never hardcoded in components.
+
+`prisma/seed.ts` is only consulted for a database with no models at all, so
+adding a row there changes what a **fresh** install starts with and nothing
+about a running one.
 
 ## Updating model pricing
 
