@@ -95,8 +95,12 @@ export function DiscussionComposer({
           value={value}
           disabled={disabled || sending}
           onChange={(e) => setValue(e.target.value)}
+          // Enter is a newline. Sending is the button, or ⌘/Ctrl+Enter for
+          // the keyboard: a question here is often several lines of thought,
+          // and a send fired by the key that ends a line was going off
+          // half-written.
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
               e.preventDefault()
               void send()
             }

@@ -79,36 +79,43 @@ describe("the discussion composer", () => {
     expect(screen.getByText(t.discussion.continueHint)).toBeTruthy()
   })
 
-  // Enter, not the button: the button is disabled on an empty box, so clicking
-  // it proves nothing about the guard inside send(). Enter reaches send()
-  // directly, which is the path a person actually takes.
+  // The shortcut, not the button: the button is disabled on an empty box,
+  // so clicking it proves nothing about the guard inside send(). ⌘+Enter
+  // reaches send() directly.
   it("does not send a message that is only whitespace", async () => {
     const calls = stubFetch()
     render(
       <DiscussionComposer runId="r1" finished canContinue onSent={() => {}} />
     )
     const box = await type("   ")
-    fireEvent.keyDown(box, { key: "Enter" })
+    fireEvent.keyDown(box, { key: "Enter", metaKey: true })
     expect(calls).toEqual([])
   })
 
-  it("sends on Enter", async () => {
+  it("sends on ⌘+Enter and on Ctrl+Enter", async () => {
     const calls = stubFetch()
     render(
       <DiscussionComposer runId="r1" finished canContinue onSent={() => {}} />
     )
     const box = await type("再想一下")
-    fireEvent.keyDown(box, { key: "Enter" })
+    fireEvent.keyDown(box, { key: "Enter", metaKey: true })
     await waitFor(() => expect(calls).toEqual(["/api/council/r1/continue"]))
+    await type("再想一下")
+    fireEvent.keyDown(box, { key: "Enter", ctrlKey: true })
+    await waitFor(() => expect(calls).toHaveLength(2))
   })
 
-  it("Shift+Enter writes a newline instead of sending", async () => {
+  // A question is often several lines of thought, and a send fired by the
+  // key that ends a line was going off half-written.
+  it("plain Enter writes a newline instead of sending", async () => {
     const calls = stubFetch()
     render(
       <DiscussionComposer runId="r1" finished canContinue onSent={() => {}} />
     )
     const box = await type("第一行")
-    fireEvent.keyDown(box, { key: "Enter", shiftKey: true })
+    const event = fireEvent.keyDown(box, { key: "Enter" })
+    // Not prevented: the textarea keeps its default, which is the newline.
+    expect(event).toBe(true)
     expect(calls).toEqual([])
   })
 })
