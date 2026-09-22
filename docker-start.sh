@@ -28,9 +28,9 @@ npx prisma migrate deploy
 # Seed the ModelConfig rows. Migrations create the EMPTY table; without this
 # the app boots fine and the model list is blank, which reads as a bug.
 #
-# Idempotent by construction: the seed upserts, and its update branch only
-# rewrites displayName and sortOrder — it does NOT re-enable a model someone
-# turned off in 設定, so running it on every boot cannot undo that choice.
+# Safe on every boot: the seed fills the model list only when it is empty, so
+# a model added or deleted in 設定 survives a redeploy. Pricing is applied
+# every time, since prices change and rows are only ever added.
 #
 # Deliberately NOT fatal, unlike the migration above. A migration failure
 # means the schema does not match the code and serving would produce wrong
