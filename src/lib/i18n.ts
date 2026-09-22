@@ -44,6 +44,7 @@ export const t = {
     chairman: "主席",
     summarizer: "總結撰寫者",
     selectChairmanPlaceholder: "選擇主席模型",
+    transcriptEmpty: "開始後，對話會顯示在這裡。",
     style: "討論方式",
     styleCollaborative: "合作",
     styleDebate: "辯論",

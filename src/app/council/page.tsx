@@ -23,7 +23,7 @@ import {
   modelKey,
 } from "@/components/models/model-picker"
 import { useModels } from "@/components/models/use-models"
-import { cn, formatLatency, formatTokens } from "@/lib/utils"
+import { formatLatency, formatTokens } from "@/lib/utils"
 import { useMoney } from "@/components/layout/currency-context"
 import { stageLabel, t } from "@/lib/i18n"
 import type { CouncilRunDto } from "@/types/api"
@@ -210,7 +210,7 @@ export default function CouncilPage() {
 
   return (
     <PageShell
-      width="narrow"
+      width="full"
       title={mode === "DISCUSSION" ? t.council.discussionTitle : t.council.title}
       description={
         mode === "DISCUSSION"
@@ -231,10 +231,16 @@ export default function CouncilPage() {
         ) : undefined
       }
     >
-      <ModeSwitch mode={mode} onChange={setMode} disabled={active} />
-
+      {/* Settings on the left, the meeting on the right. The settings
+          column stays put while the transcript scrolls, so a running
+          meeting never pushes its own controls out of reach; below lg the
+          two stack, settings first, as before. */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(340px,420px)_minmax(0,1fr)] lg:items-start">
+      <div className="space-y-6 lg:sticky lg:top-6">
       <Card>
         <CardContent className="space-y-4 p-4">
+          <ModeSwitch mode={mode} onChange={setMode} disabled={active} />
+
           <Textarea
             placeholder={
               mode === "DISCUSSION"
@@ -367,9 +373,11 @@ export default function CouncilPage() {
           {error && <p className="text-sm text-destructive">{error}</p>}
         </CardContent>
       </Card>
+      </div>
 
-      {run && (
-        <div className="space-y-5">
+      <div className="min-w-0 space-y-5">
+      {run ? (
+        <>
           <div className="flex items-center gap-3">
             <StatusBadge status={run.status} />
             {!TERMINAL.includes(run.status) && (
@@ -395,7 +403,7 @@ export default function CouncilPage() {
               scroll so the composer stays reachable while a long meeting
               runs, instead of being pushed below the fold. */}
           <div className="rounded-lg border border-gray-200 bg-white">
-            <div className="max-h-[min(70vh,640px)] space-y-4 overflow-y-auto rounded-t-lg bg-gray-50 p-4 pb-24">
+            <div className="max-h-[min(70vh,640px)] space-y-4 overflow-y-auto rounded-t-lg bg-gray-50 p-4 pb-24 lg:max-h-[calc(100dvh-14rem)]">
               <ChatTranscript
                 run={run}
                 question={askedQuestion}
@@ -442,8 +450,14 @@ export default function CouncilPage() {
               </div>
             </>
           )}
+        </>
+      ) : (
+        <div className="flex min-h-[240px] items-center justify-center rounded-lg border border-dashed border-gray-200 bg-white p-6 text-sm text-gray-400">
+          {t.council.transcriptEmpty}
         </div>
       )}
+      </div>
+      </div>
 
       <SummaryModal
         open={summaryOpen}
@@ -523,6 +537,12 @@ function SummaryModal({
   )
 }
 
+/**
+ * The two ways a meeting can be run, as the same segmented control as
+ * 合作/辯論 below it. It was a pair of description cards; at the top of a
+ * settings column they cost more height than the choice is worth, and the
+ * difference between the two is already in the page title and subtitle.
+ */
 function ModeSwitch({
   mode,
   onChange,
@@ -532,49 +552,23 @@ function ModeSwitch({
   onChange: (m: Mode) => void
   disabled: boolean
 }) {
-  const options: Array<{
-    value: Mode
-    label: string
-    hint: string
-  }> = [
-    {
-      value: "COUNCIL",
-      label: t.mode.council,
-      hint: t.mode.councilHint,
-    },
-    {
-      value: "DISCUSSION",
-      label: t.mode.discussion,
-      hint: t.mode.discussionHint,
-    },
-  ]
-
   return (
-    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
+    <div className="flex gap-1">
+      {(
+        [
+          ["COUNCIL", t.mode.council],
+          ["DISCUSSION", t.mode.discussion],
+        ] as const
+      ).map(([value, label]) => (
+        <Button
+          key={value}
+          size="sm"
+          variant={mode === value ? "default" : "outline"}
+          onClick={() => onChange(value)}
           disabled={disabled}
-          onClick={() => onChange(o.value)}
-          className={cn(
-            "rounded-lg border px-4 py-3 text-left transition-colors",
-            mode === o.value
-              ? "border-rose-brand bg-rose-light/40"
-              : "border-gray-200 bg-white hover:border-rose-brand",
-            disabled && "opacity-60"
-          )}
         >
-          <div
-            className={cn(
-              "text-sm font-semibold",
-              mode === o.value ? "text-rose-dark" : "text-gray-900"
-            )}
-          >
-            {o.label}
-          </div>
-          <div className="text-xs text-gray-500">{o.hint}</div>
-        </button>
+          {label}
+        </Button>
       ))}
     </div>
   )
