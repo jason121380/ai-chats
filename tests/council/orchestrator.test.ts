@@ -1,7 +1,11 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest"
 
 import { getTestDb } from "../helpers/db"
-import { runCouncil, markStaleCouncilRuns } from "@/server/council/orchestrator"
+import {
+  runCouncil,
+  markStaleRuns,
+  failInterruptedModelRuns,
+} from "@/server/council/orchestrator"
 import { anonymize } from "@/server/council/critique"
 import { resetCouncilEvents } from "@/server/council/events"
 import { ProviderRegistry } from "@/server/ai/registry"
@@ -387,7 +391,7 @@ describe("anonymize", () => {
   })
 })
 
-describe("markStaleCouncilRuns", () => {
+describe("markStaleRuns", () => {
   it("marks old non-terminal runs FAILED and leaves fresh/terminal runs alone", async () => {
     const config = await createRun()
     // Simulate an interrupted run stuck in ROUND_1 with an old updatedAt.
@@ -399,7 +403,7 @@ describe("markStaleCouncilRuns", () => {
 
     const freshConfig = await createRun() // stays PENDING with fresh updatedAt
 
-    const count = await markStaleCouncilRuns(db, 15 * 60_000)
+    const count = await markStaleRuns(db, 15 * 60_000)
     expect(count).toBeGreaterThanOrEqual(1)
 
     const stale = await db.councilRun.findUniqueOrThrow({
@@ -412,5 +416,88 @@ describe("markStaleCouncilRuns", () => {
       where: { id: freshConfig.runId },
     })
     expect(fresh.status).toBe("PENDING")
+  })
+
+  /**
+   * A turn writes partial text every 400ms while it streams and only becomes
+   * COMPLETED at the end. Killed mid-stream it keeps RUNNING with a few
+   * characters in it, and the transcript draws that as a speaker still
+   * typing — under a council the sweep above has already marked FAILED.
+   */
+  it("closes out the turn that was mid-stream, keeping what it had written", async () => {
+    const config = await createRun()
+    const stranded = await db.modelRun.create({
+      data: {
+        sessionId: config.sessionId,
+        councilRunId: config.runId,
+        provider: "OPENAI",
+        modelId: MODEL_IDS.OPENAI as string,
+        stage: "DISCUSSION",
+        status: "RUNNING",
+        prompt: "[user]\nsay something",
+        response: "Anthrop",
+      },
+    })
+    await db.$executeRaw`UPDATE "ModelRun" SET "startedAt" = NOW() - INTERVAL '1 hour' WHERE id = ${stranded.id}::uuid`
+
+    const live = await db.modelRun.create({
+      data: {
+        sessionId: config.sessionId,
+        councilRunId: config.runId,
+        provider: "ANTHROPIC",
+        modelId: MODEL_IDS.ANTHROPIC as string,
+        stage: "DISCUSSION",
+        status: "RUNNING",
+        prompt: "[user]\nsay something",
+        startedAt: new Date(),
+      },
+    })
+
+    await markStaleRuns(db, 15 * 60_000)
+
+    const closed = await db.modelRun.findUniqueOrThrow({
+      where: { id: stranded.id },
+    })
+    expect(closed.status).toBe("FAILED")
+    expect(closed.errorCode).toBe("INTERRUPTED")
+    expect(closed.completedAt).not.toBeNull()
+    // The partial stays: it is evidence of how far the turn got, and the
+    // transcript branches on the failed status before it reads the text.
+    expect(closed.response).toBe("Anthrop")
+
+    // A turn that started moments ago is still a turn in progress.
+    const untouched = await db.modelRun.findUniqueOrThrow({
+      where: { id: live.id },
+    })
+    expect(untouched.status).toBe("RUNNING")
+  })
+
+  it("closes out a whole run's turns at once, whatever their age", async () => {
+    // What 結束討論 needs: the meeting is being ended now, so the turn that
+    // was mid-flight a second ago must stop showing a typing caret too.
+    const config = await createRun()
+    const justStarted = await db.modelRun.create({
+      data: {
+        sessionId: config.sessionId,
+        councilRunId: config.runId,
+        provider: "OPENAI",
+        modelId: MODEL_IDS.OPENAI as string,
+        stage: "DISCUSSION",
+        status: "RUNNING",
+        prompt: "[user]\nsay something",
+        startedAt: new Date(),
+      },
+    })
+
+    const count = await failInterruptedModelRuns(db, {
+      councilRunId: config.runId,
+    })
+    expect(count).toBe(1)
+
+    const closed = await db.modelRun.findUniqueOrThrow({
+      where: { id: justStarted.id },
+    })
+    expect(closed.status).toBe("FAILED")
+    expect(closed.errorCode).toBe("INTERRUPTED")
   })
 })

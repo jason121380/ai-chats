@@ -1,5 +1,5 @@
 import { prisma } from "@/server/db/prisma"
-import { markStaleCouncilRuns } from "@/server/council/orchestrator"
+import { markStaleRuns } from "@/server/council/orchestrator"
 import { getSessionCost } from "@/server/usage/analytics"
 
 /**
@@ -13,7 +13,7 @@ import { getSessionCost } from "@/server/usage/analytics"
  * page visibly rewrites itself.
  */
 export async function getSessionDetail(id: string) {
-  await markStaleCouncilRuns(prisma).catch(() => {})
+  await markStaleRuns(prisma).catch(() => {})
 
 
   const session = await prisma.session.findUnique({

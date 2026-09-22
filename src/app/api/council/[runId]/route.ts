@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 import { prisma } from "@/server/db/prisma"
 import { handleRouteError, jsonError } from "@/server/api-helpers"
-import { markStaleCouncilRuns } from "@/server/council/orchestrator"
+import { markStaleRuns } from "@/server/council/orchestrator"
 
 export const dynamic = "force-dynamic"
 
@@ -11,7 +11,7 @@ export async function GET(
   { params }: { params: { runId: string } }
 ) {
   try {
-    await markStaleCouncilRuns(prisma).catch(() => {})
+    await markStaleRuns(prisma).catch(() => {})
 
     const run = await prisma.councilRun.findUnique({
       where: { id: params.runId },

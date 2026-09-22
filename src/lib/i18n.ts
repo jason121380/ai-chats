@@ -44,6 +44,12 @@ export const t = {
     chairman: "主席",
     summarizer: "總結撰寫者",
     selectChairmanPlaceholder: "選擇主席模型",
+    stop: "結束討論",
+    stuckHint: "這場討論還在進行中。如果它其實已經停住了，可以直接結束並從下一輪繼續。",
+    stopping: "結束中…",
+    stopConfirm:
+      "確定要結束這場討論？已經說過的話與費用紀錄都會保留，之後可以從下一輪繼續。",
+    stopFailed: "無法結束這場討論",
     transcriptEmpty: "開始後，對話會顯示在這裡。",
     style: "討論方式",
     styleCollaborative: "合作",

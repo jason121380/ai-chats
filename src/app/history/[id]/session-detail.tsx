@@ -10,6 +10,7 @@ import { Markdown } from "@/components/ui/markdown"
 import { ModelRunCard } from "@/components/council/model-run-card"
 import { ChatTranscript } from "@/components/council/chat-transcript"
 import { DiscussionComposer } from "@/components/council/discussion-composer"
+import { StopRunButton } from "@/components/council/stop-run-button"
 import { DetailModal } from "@/components/council/detail-modal"
 import { ConvertedNote } from "@/components/layout/converted-note"
 import { useModels } from "@/components/models/use-models"
@@ -321,6 +322,24 @@ export function SessionDetail({
         )}
         <div ref={bottomRef} />
       </div>
+
+      {/* A meeting nothing is driving any more: say so, and offer the way
+          out, instead of leaving the composer in a mode where everything
+          typed is filed for a reader that will never come. */}
+      {headline?.kind === "DISCUSSION" &&
+        !TERMINAL.includes(headline.status) && (
+          <div className="flex shrink-0 flex-wrap items-center gap-3 border-t border-gray-200 pt-3">
+            <span className="text-sm text-gray-500">
+              {t.council.stuckHint}
+            </span>
+            <StopRunButton
+              runId={headline.id}
+              onStopped={() => {
+                if (id) void load(id).catch(() => {})
+              }}
+            />
+          </div>
+        )}
 
       {headline?.kind === "DISCUSSION" && (
         <DiscussionComposer
