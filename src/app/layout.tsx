@@ -1,9 +1,8 @@
 import type { Metadata } from "next"
 
-import { ShellMain } from "@/components/layout/admin-shell"
+import { AppChrome } from "@/components/layout/app-chrome"
 import { CurrencyProvider } from "@/components/layout/currency-context"
 import { AdminShellProvider } from "@/components/layout/shell-context"
-import { Sidebar } from "@/components/layout/sidebar"
 import { prisma } from "@/server/db/prisma"
 import { getCurrencySetting, NO_RATE } from "@/server/usage/currency"
 import "./globals.css"
@@ -69,8 +68,7 @@ export default async function RootLayout({
         <CurrencyProvider value={currency}>
           <AdminShellProvider>
             <div className="min-h-app bg-background">
-              <Sidebar />
-              <ShellMain>{children}</ShellMain>
+              <AppChrome>{children}</AppChrome>
             </div>
           </AdminShellProvider>
         </CurrencyProvider>
