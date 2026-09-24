@@ -278,6 +278,8 @@ export const t = {
     submit: "解鎖",
     submitting: "驗證中…",
     failed: "密鑰不正確。",
+    signOut: "登出",
+    signingOut: "登出中…",
     unavailable: "伺服器尚未設定 APP_SECRET。",
   },
 

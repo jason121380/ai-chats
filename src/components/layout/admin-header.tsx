@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { ChevronRight, Menu } from "lucide-react"
 
 import { useAdminShell } from "@/components/layout/shell-context"
+import { SignOutButton } from "@/components/layout/sign-out-button"
 import { t } from "@/lib/i18n"
 
 /**
@@ -79,6 +80,7 @@ export function AdminHeader() {
           </span>
         ))}
       </nav>
+      <SignOutButton />
     </header>
   )
 }
