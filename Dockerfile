@@ -31,6 +31,9 @@ COPY . .
 # lazy), so a syntactically valid placeholder is enough. It lives only in
 # this stage and never reaches the runtime image, where Zeabur supplies the
 # real value.
+# Railway passes service variables to Docker builds only when declared as ARG;
+# next build needs APP_SECRET to collect page data.
+ARG APP_SECRET
 ENV DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build"
 RUN npm run build
 
