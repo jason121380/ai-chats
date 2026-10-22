@@ -53,15 +53,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 22, because that is what the dependency tree actually requires:
-      # jsdom declares `^22.22.2 || ^24.15.0 || >=26.0.0` and the undici it
-      # pulls in calls `markAsUncloneable`, which `node:worker_threads` does
-      # not export before 22. On 20 that surfaces as a TypeError from inside
-      # node_modules while the suite is still loading, which reads like a
-      # broken dependency rather than a wrong runtime.
+      # 24.22.1 is the Node.js October 21, 2026 security release
+      # (CVE-2026-105482, CVE-2026-105483, CVE-2026-106069, CVE-2026-111497).
+      # Node 20 is EOL and does not include those fixes. jsdom declares
+      # `^22.22.2 || ^24.15.0 || >=26.0.0`; 24.22.1 is inside that range, and
+      # the undici it pulls in needs `markAsUncloneable` from
+      # `node:worker_threads`, which is absent before 22.
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24.22.1
           cache: npm
 
       - run: npm ci

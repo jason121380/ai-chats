@@ -13,7 +13,7 @@
 # instead of left to a dashboard setting someone can flip.
 
 # ── build ─────────────────────────────────────────────────────────────
-FROM node:20-alpine AS build
+FROM node:24.22.1-alpine AS build
 WORKDIR /app
 
 # package.json + prisma/ before the rest: `npm ci` runs `prisma generate`
@@ -46,7 +46,7 @@ RUN npm run build
 RUN npm prune --omit=dev && npx prisma generate
 
 # ── run ───────────────────────────────────────────────────────────────
-FROM node:20-alpine AS run
+FROM node:24.22.1-alpine AS run
 WORKDIR /app
 ENV NODE_ENV=production
 

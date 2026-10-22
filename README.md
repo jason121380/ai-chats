@@ -66,7 +66,7 @@ API keys, `DATABASE_URL`, provider SDK calls and cost backend all live under `sr
 
 ## Local setup
 
-Requirements: Node 20+, PostgreSQL 14+.
+Requirements: Node 24.22.1, PostgreSQL 14+.
 
 ```bash
 npm install
